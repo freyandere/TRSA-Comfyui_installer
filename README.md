@@ -2,10 +2,10 @@ TRSA ComfyUI Installer
 Professional installer for ComfyUI Portable: automates Triton, SageAttention & TeaCache setup with color-coded feedback and robust fallbacks.
 
 Badges:
-
-text
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
 [![Release](https://img.shields.io/github/v/release/your-username/TRSA-ComfyUI-Installer)](https://github.com/your-username/TRSA-ComfyUI-Installer/releases)
+
+
 Quick Start:
 
 bash
