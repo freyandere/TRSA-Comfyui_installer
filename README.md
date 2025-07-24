@@ -33,7 +33,7 @@ While there are several ComfyUI installers available, TRSA stands out with:
 
 2. **Run** the installer:
    ```bash
-   TRSA_installer.bat
+   [TRSA_installer.bat](https://github.com/freyandere/TRSA-Comfyui_installer/releases/tag/v1.2%2Bru)
    ```
 
 3. **Follow** the color-coded menu - installation typically takes 5-10 minutes!
