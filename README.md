@@ -1,164 +1,161 @@
+# 🚀 TRSA ComfyUI Установщик
+
+**Профессиональный цветной установщик для ComfyUI Portable с Triton, SageAttention и TeaCache**
+
+Это **инструмент автоматизации профессионального уровня**, который превращает настройку ComfyUI Portable из сложного ручного процесса в **установку одним кликом**. В отличие от простых batch-скриптов, этот установщик включает **цветной интерфейс**, **надежную обработку ошибок** и **интеллектуальные резервные системы** для максимальной надежности.
+
+### 🎯 Что делает его особенным
+
+Хотя существует несколько установщиков ComfyUI, TRSA выделяется:
+
+- **🎨 Цветной интерфейс**: Визуальная обратная связь с профессиональной цветовой кодировкой для мгновенного распознавания статуса
+- **⚡ Фокус на производительность**: Специализированная оптимизация для **2-3x более быстрой генерации видео** с SageAttention + TeaCache
+- **🛡️ Надежность корпоративного уровня**: Множественные резервные методы и комплексная обработка ошибок
+- **🎯 Поддержка RTX 50xx**: Оптимизирован для новейшей архитектуры Blackwell с CUDA 12.8 + PyTorch 2.7.1
 
 
 
+## 🚀 Быстрый старт
 
-# 🚀 TRSA ComfyUI Installer
-
-**Professional Color-Enhanced Installer for ComfyUI Portable with Triton, SageAttention & TeaCache**
-
-It is a **professional-grade automation tool** that transforms ComfyUI Portable setup from a complex manual process into a **one-click installation experience**. Unlike basic batch scripts, this installer features a **color-coded interface**, **robust error handling**, and **intelligent fallback systems** for maximum reliability.
-
-### 🎯 What Makes This Different
-
-While there are several ComfyUI installers available, TRSA stands out with:
-
-- **🎨 Color-Enhanced Interface**: Visual feedback with professional color coding for instant status recognition
-- **⚡ Performance Focus**: Specialized optimization for **2-3x faster video generation** with SageAttention + TeaCache
-- **🛡️ Enterprise-Grade Reliability**: Multiple fallback methods and comprehensive error handling
-- **🎯 RTX 50xx Support**: Optimized for latest Blackwell architecture with CUDA 12.8 + PyTorch 2.7.1
-
-<img width="1306" height="523" alt="image" src="https://github.com/user-attachments/assets/1eb2a43e-9ec1-4c91-ac12-cfe1c3342192" />
-
-## 🚀 Quick Start
-
-### Prerequisites
+### Требования
 - Windows 10/11
-- NVIDIA GPU (RTX 20xx or newer recommended)
-- ComfyUI Portable installation
+- NVIDIA GPU (рекомендуется RTX 20xx или новее)
+- Установленный ComfyUI Portable
 
-### Installation
-1. **Download** the installer to your `python_embeded` folder:
+### Установка
+1. **Скачайте** установщик в папку `python_embeded`:
    ```bash
    cd ComfyUI_windows_portable\python_embeded
-   # Place TRSA_installer.bat here
+   # Поместите TRSA_installer.bat сюда
    ```
 
-2. **Run** the installer:
+2. **Запустите** установщик:
    ```bash
    TRSA_installer.bat
    ```
 
-3. **Follow** the color-coded menu - installation typically takes 5-10 minutes!
+3. **Следуйте** цветному меню - установка обычно занимает 5-10 минут!
 
-## 🔧 Features
+## 🔧 Возможности
 
-### Core Components
-- **🧠 Triton 3.3+**: Advanced GPU kernel compilation
-- **⚡ SageAttention 2.2.0**: CUDA 12.8 optimized for RTX 50xx Blackwell
-- **🚀 TeaCache**: Additional 1.5-3x speed boost for diffusion models
-- **📁 Auto-Setup**: Include/libs folders for seamless compilation
+### Основные компоненты
+- **🧠 Triton 3.3+**: Продвинутая компиляция ядер GPU
+- **⚡ SageAttention 2.2.0**: CUDA 12.8 оптимизирован для RTX 50xx Blackwell
+- **🚀 TeaCache**: Дополнительное ускорение в 1.5-3x для диффузионных моделей
+- **📁 Автонастройка**: Папки include/libs для бесшовной компиляции
 
-### Advanced Capabilities
-- **🎨 Color-Coded Status**: Green (success), Red (errors), Yellow (warnings), Cyan (info)
-- **📦 Automated Downloads**: Direct from GitHub with integrity verification  
-- **🔄 Smart Fallbacks**: PowerShell → Python → Manual installation paths
-- **✅ Comprehensive Verification**: Real-time import testing and compatibility checks
-- **🔧 System Analysis**: CUDA 12.8 + PyTorch 2.7.1 compatibility validation
+### Расширенные возможности
+- **🎨 Цветовая индикация статуса**: Зеленый (успех), Красный (ошибки), Желтый (предупреждения), Голубой (информация)
+- **📦 Автоматические загрузки**: Прямо с GitHub с проверкой целостности  
+- **🔄 Умные резервы**: PowerShell → Python → Ручная установка
+- **✅ Комплексная проверка**: Тестирование импорта в реальном времени и проверки совместимости
+- **🔧 Анализ системы**: Проверка совместимости CUDA 12.8 + PyTorch 2.7.1
 
-## 📊 Performance Gains
+## 📊 Прирост производительности
 
-| Component | Speed Improvement | Compatible Models |
-|-----------|------------------|-------------------|
-| **SageAttention** | 2-3x faster | WAN2.1, Hunyuan Video, Mochi |
-| **TeaCache** | 1.5-3x additional | FLUX, LTX-Video, CogVideoX |
-| **Combined** | Up to **9x faster** | Most video generation workflows |
+| Компонент | Ускорение | Совместимые модели |
+|-----------|-----------|-------------------|
+| **SageAttention** | В 2-3 раза быстрее | WAN2.1, Hunyuan Video, Mochi |
+| **TeaCache** | Дополнительно в 1.5-3 раза | FLUX, LTX-Video, CogVideoX |
+| **Вместе** | До **9 раз быстрее** | Большинство workflow генерации видео |
 
-## 🎮 Supported GPU Architectures
+## 🎮 Поддерживаемые архитектуры GPU
 
-- **✅ RTX 50xx (Blackwell)**: Full optimization with CUDA 12.8
-- **✅ RTX 40xx (Ada)**: Complete support  
-- **✅ RTX 30xx (Ampere)**: Full compatibility
-- **⚠️ RTX 20xx**: Limited support
+- **✅ RTX 50xx (Blackwell)**: Полная оптимизация с CUDA 12.8
+- **✅ RTX 40xx (Ada)**: Полная поддержка  
+- **✅ RTX 30xx (Ampere)**: Полная совместимость
+- **⚠️ RTX 20xx**: Ограниченная поддержка
 
-## 📋 Menu Options
+## 📋 Опции меню
 
 ```
-1. 🔍 System Compatibility Check
-2. 📦 Upgrade pip  
-3. ⚙️ Install Triton (Standard)
-4. 🚀 Install Triton (Pre-release 3.3)
-5. 🧠 Install Sage Attention 2++
-6. 📁 Auto-setup include/libs folders
-7. 📂 Manual setup include/libs folders
-8. ⚡ Install TeaCache (Speed Optimization)
-9. 🔄 Force Reinstall All Components
-10. ✅ Verify Installation Status
-11. ❌ Exit
+1. 🔍 Проверка совместимости системы
+2. 📦 Обновить pip  
+3. ⚙️ Установить Triton (Стабильная версия)
+4. 🚀 Установить Triton (Пре-релиз 3.3)
+5. 🧠 Установить Sage Attention 2++
+6. 📁 Автоматическая настройка папок include/libs
+7. 📂 Ручная настройка папок include/libs
+8. ⚡ Установить TeaCache (Оптимизация скорости)
+9. 🔄 Принудительная переустановка всех компонентов
+10. ✅ Проверить статус установки
+11. ❌ Выход
 ```
 
-## 🛠️ Technical Requirements
+## 🛠️ Технические требования
 
-### Required Versions
+### Необходимые версии
 - **CUDA**: 12.8 (cu128)
 - **PyTorch**: 2.7.1+
-- **Python**: 3.10+ (3.12.7 recommended)
+- **Python**: 3.10+ (рекомендуется 3.12.7)
 
-### Installation Commands Generated
+### Генерируемые команды установки
 ```bash
-# PyTorch 2.7.1 with CUDA 12.8
+# PyTorch 2.7.1 с CUDA 12.8
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
-# SageAttention 2.2.0 (RTX 50xx optimized)
+# SageAttention 2.2.0 (оптимизирован для RTX 50xx)
 pip install sageattention-2.2.0+cu128torch2.7.1.post1-cp39-abi3-win_amd64.whl
 ```
 
-## 🎯 Model-Specific TeaCache Settings
+## 🎯 Настройки TeaCache для конкретных моделей
 
-| Model | rel_l1_thresh | Expected Speedup |
-|-------|---------------|------------------|
+| Модель | rel_l1_thresh | Ожидаемое ускорение |
+|--------|---------------|-------------------|
 | **FLUX** | 0.4 | ~2x |
 | **HunyuanVideo** | 0.15 | ~1.9x |
 | **WAN2.1** | 0.08-0.26 | ~1.6-2.3x |
 
-## 🔍 Comparison with Similar Projects
+## 🔍 Сравнение с похожими проектами
 
-| Project | GUI | Color Interface | RTX 50xx | Auto-Fallbacks | TeaCache |
-|---------|-----|-----------------|----------|----------------|----------|
+| Проект | GUI | Цветной интерфейс | RTX 50xx | Авто-резервы | TeaCache |
+|--------|-----|------------------|----------|--------------|----------|
 | **TRSA Installer** | ❌ | ✅ | ✅ | ✅ | ✅ |
 | ComfyUI-Installer-GUI | ✅ | ❌ | ❌ | ❌ | ❌ |
 | UmeAiRT Auto-installer | ❌ | ❌ | ❌ | ❌ | ❌ |
 | ComfyUI-Windows-Portable | ❌ | ❌ | ❌ | ❌ | ❌ |
 
-## 🚨 Troubleshooting
+## 🚨 Устранение неполадок
 
-### Common Issues
-- **Installation fails**: Run as Administrator
-- **CUDA errors**: Verify PyTorch 2.7.1 + CUDA 12.8 compatibility  
-- **Triton compilation**: Ensure include/libs folders are present
-- **Import errors**: Try force reinstall (option 9)
+### Распространенные проблемы
+- **Ошибка установки**: Запустите от имени администратора
+- **Ошибки CUDA**: Проверьте совместимость PyTorch 2.7.1 + CUDA 12.8  
+- **Компиляция Triton**: Убедитесь, что папки include/libs присутствуют
+- **Ошибки импорта**: Попробуйте принудительную переустановку (опция 9)
 
-### Support
-- Check the **color-coded status messages** for specific guidance
-- Use the **system compatibility check** (option 1) for diagnostics
-- Refer to **verification report** (option 10) for component status
+### Поддержка
+- Проверьте **цветные сообщения о статусе** для конкретных указаний
+- Используйте **проверку совместимости системы** (опция 1) для диагностики
+- Обратитесь к **отчету проверки** (опция 10) для статуса компонентов
 
-## 📈 Benchmarks
+## 📈 Бенчмарки
 
-Real-world performance improvements with RTX 4090:
+Реальные улучшения производительности с RTX 4090:
 
-- **Hunyuan Video (720p)**: 45s → 15s (**3x faster**)
-- **WAN2.1 (512x512)**: 12s → 4s (**3x faster**)  
-- **FLUX.1-dev**: 8s → 3.5s (**2.3x faster**)
+- **Hunyuan Video (720p)**: 45с → 15с (**в 3 раза быстрее**)
+- **WAN2.1 (512x512)**: 12с → 4с (**в 3 раза быстрее**)  
+- **FLUX.1-dev**: 8с → 3.5с (**в 2.3 раза быстрее**)
 
-## 🤝 Contributing
+## 🤝 Участие в разработке
 
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Follow the existing batch script style and color conventions
-4. Test on Windows 10/11
-5. Submit a pull request
+Вклады приветствуются! Пожалуйста:
+1. Сделайте fork репозитория
+2. Создайте ветку для функции
+3. Следуйте существующему стилю batch-скрипта и цветовым соглашениям
+4. Протестируйте на Windows 10/11
+5. Отправьте pull request
 
-## 📄 License
+## 📄 Лицензия
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Этот проект лицензирован под лицензией MIT - смотрите файл [LICENSE](LICENSE) для подробностей.
 
-## 🙏 Acknowledgments
+## 🙏 Благодарности
 
-- [ComfyUI](https://github.com/comfyanonymous/ComfyUI) by comfyanonymous
-- [SageAttention](https://github.com/thu-ml/SageAttention) for GPU optimization
-- [TeaCache](https://github.com/welltop-cn/ComfyUI-TeaCache) for diffusion acceleration
-- Community feedback and testing
+- [ComfyUI](https://github.com/comfyanonymous/ComfyUI) от comfyanonymous
+- [SageAttention](https://github.com/thu-ml/SageAttention) за оптимизацию GPU
+- [TeaCache](https://github.com/welltop-cn/ComfyUI-TeaCache) за ускорение диффузии
+- Отзывы и тестирование сообщества
 
-⭐ **Star this repo** if TRSA helped accelerate your ComfyUI workflows!
+⭐ **Поставьте звезду этому репозиторию**, если TRSA помог ускорить ваши workflow в ComfyUI!
 
+Этот README разработан для профессионального, информативного использования и может быть напрямую скопирован в ваш репозиторий. Он подчеркивает уникальные особенности вашего установщика по сравнению с похожими проектами, предоставляя четкие инструкции по использованию и технические спецификации.
