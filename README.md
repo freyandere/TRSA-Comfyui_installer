@@ -162,5 +162,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ⭐ **Star this repo** if TRSA helped accelerate your ComfyUI workflows!
 
-This README is designed to be professional, informative, and directly copy-pasteable into your repository. It highlights your installer's unique features compared to similar projects while providing clear usage instructions and technical specifications.
-
