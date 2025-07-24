@@ -1,6 +1,6 @@
-# Professional README for TRSA ComfyUI Installer
 
-Based on the similar ComfyUI installation projects I found, here's a professional README description for your repository that you can copy-paste directly:
+
+
 
 # 🚀 TRSA ComfyUI Installer
 
@@ -16,6 +16,8 @@ While there are several ComfyUI installers available, TRSA stands out with:
 - **⚡ Performance Focus**: Specialized optimization for **2-3x faster video generation** with SageAttention + TeaCache
 - **🛡️ Enterprise-Grade Reliability**: Multiple fallback methods and comprehensive error handling
 - **🎯 RTX 50xx Support**: Optimized for latest Blackwell architecture with CUDA 12.8 + PyTorch 2.7.1
+
+<img width="1306" height="523" alt="image" src="https://github.com/user-attachments/assets/1eb2a43e-9ec1-4c91-ac12-cfe1c3342192" />
 
 ## 🚀 Quick Start
 
