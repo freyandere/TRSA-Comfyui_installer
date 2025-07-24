@@ -6,9 +6,7 @@ Based on the similar ComfyUI installation projects I found, here's a professiona
 
 **Professional Color-Enhanced Installer for ComfyUI Portable with Triton, SageAttention & TeaCache**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
-[![Release](https://img.shields.io/github/v/release/your-username/TRSA-ComfyUI-Installer)](https://github.com/your-username/TRSA-ComfyUI-Installer/releases)
- is a **professional-grade automation tool** that transforms ComfyUI Portable setup from a complex manual process into a **one-click installation experience**. Unlike basic batch scripts, this installer features a **color-coded interface**, **robust error handling**, and **intelligent fallback systems** for maximum reliability.
+It is a **professional-grade automation tool** that transforms ComfyUI Portable setup from a complex manual process into a **one-click installation experience**. Unlike basic batch scripts, this installer features a **color-coded interface**, **robust error handling**, and **intelligent fallback systems** for maximum reliability.
 
 ### 🎯 What Makes This Different
 
