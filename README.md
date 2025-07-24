@@ -4,6 +4,8 @@
 
 It is a **professional-grade automation tool** that transforms ComfyUI Portable setup from a complex manual process into a **one-click installation experience**. Unlike basic batch scripts, this installer features a **color-coded interface**, **robust error handling**, and **intelligent fallback systems** for maximum reliability.
 
+
+
 ### 🎯 What Makes This Different
 
 While there are several ComfyUI installers available, TRSA stands out with:
