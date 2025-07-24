@@ -28,13 +28,10 @@ While there are several ComfyUI installers available, TRSA stands out with:
 1. **Download** the installer to your `python_embeded` folder:
    ```bash
    cd ComfyUI_windows_portable\python_embeded
-   # Place TRSA_installer.bat here
+   # Place TRSA.v.x.x.x.bat here
    ```
 
-2. **Run** the installer:
-   ```bash
-   [TRSA_installer.bat](https://github.com/freyandere/TRSA-Comfyui_installer/releases/tag/v1.2%2Bru)
-   ```
+
 
 3. **Follow** the color-coded menu - installation typically takes 5-10 minutes!
 
