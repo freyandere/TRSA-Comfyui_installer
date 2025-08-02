@@ -377,6 +377,7 @@ launcher.bat
 - **[Triton Windows](https://github.com/woct0rdho/triton-windows)** - Порт Triton для Windows от [@woct0rdho](https://github.com/woct0rdho) и сообщества
 - **[SageAttention](https://github.com/thu-ml/SageAttention)** - Квантованное внимание от исследователей Tsinghua University
 - **[ComfyUI](https://github.com/comfyanonymous/ComfyUI)** - Мощный узловой интерфейс от [@comfyanonymous](https://github.com/comfyanonymous)
+- [Telegram каналу - Psy Eyes](https://t.me/Psy_Eyes) - за хайлайт репозитория и поддержку комьюнити.
 
 Без их невероятной работы этот проект был бы невозможен! 🚀
 
