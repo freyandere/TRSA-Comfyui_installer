@@ -58,13 +58,13 @@ curl -O https://raw.githubusercontent.com/freyandere/TRSA-Comfyui_installer/refs
 ```
 
 ### 2️⃣ **Place**
-Put `launcher.bat` in your ComfyUI folder:
+Put `TRSA_v3_ru.en.bat` in your ComfyUI folder:
 ```
 
 ComfyUI_windows_portable/
 └── python_embeded/
 ├── python.exe          ← Required
-└── launcher.bat        ← Place here
+└── TRSA_v3_ru.en.bat        ← Place here
 
 ```
 
@@ -72,9 +72,9 @@ ComfyUI_windows_portable/
 ```
 
 
-# Double-click launcher.bat or run:
+# Double-click TRSA_v3_ru.en.bat or run:
 
-launcher.bat
+TRSA_v3_ru.en.bat
 
 ```
 
@@ -257,11 +257,11 @@ Choose: 4. 📊 Detailed Report
 ```
 
 ❌ ERROR: python.exe not found!
-📍 Place launcher.bat in folder with python.exe
+📍 Place TRSA_v3_ru.en.bat in folder with python.exe
 Usually: ComfyUI_windows_portable\python_embedded\
 
 ```
-**Solution**: Move `launcher.bat` to the correct folder with `python.exe`
+**Solution**: Move `TRSA_v3_ru.en.bat` to the correct folder with `python.exe`
 
 #### **"Triton installation failed"**
 ```
@@ -342,7 +342,7 @@ code core_app.py installer.py checker.py ui_manager.py
 
 # Test changes
 
-launcher.bat
+TRSA_v3_ru.en.bat
 
 ```
 
@@ -355,7 +355,7 @@ launcher.bat
 ├── 🐍 checker.py        \# System diagnostics (420 lines)
 ├── 🐍 ui_manager.py     \# Interface manager (580 lines)
 ├── 📄 config.json       \# Configuration
-└── 📄 launcher.bat      \# Bootstrap (70 lines)
+└── 📄 TRSA_v3_ru.en.bat      \# Bootstrap (70 lines)
 
 ```
 
