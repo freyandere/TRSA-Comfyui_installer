@@ -125,8 +125,8 @@ class UIManager:
                 'triton_not_installed': 'Triton не установлен',
                 'sageattention_installed': 'SageAttention установлен',
                 'sageattention_not_installed': 'SageAttention не установлен',
-                'folders_ok': 'Папки include/libs найдены',
-                'folders_missing': 'Папки include/libs отсутствуют',
+                'folders_ok': 'Обе папки include/libs найдены',
+                'folders_missing': 'Одна или обе папки include/libs отсутствуют',
                 'pytorch_ok': 'PyTorch работает',
                 'pytorch_missing': 'PyTorch не найден',
                 'cuda_available': 'CUDA доступна',
@@ -483,4 +483,5 @@ if __name__ == "__main__":
     
     while ui.show_menu(menu_items):
         pass
+
 
