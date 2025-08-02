@@ -389,7 +389,7 @@ Special thanks to the developers of projects that made this possible:
 - **[SageAttention](https://github.com/thu-ml/SageAttention)** - Quantized attention from Tsinghua University researchers
 - **[ComfyUI](https://github.com/comfyanonymous/ComfyUI)** - Powerful node-based interface by [@comfyanonymous](https://github.com/comfyanonymous)
 - **[Telegram channel - Psy Eyes](https://t.me/Psy_Eyes)** - for highlighting the repository and community support
-- **[Telegram channel - Psy Eyes FRALID | НАСМОТРЕННОСТЬ](https://t.me/fralid95) - for his support through years.
+- **[Telegram channel - FRALID - НАСМОТРЕННОСТЬ](https://t.me/fralid95)** - for his support through years.
 
 Without their incredible work, this project would not have been possible! 🚀
 
