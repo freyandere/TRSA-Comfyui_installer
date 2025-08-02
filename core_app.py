@@ -226,11 +226,20 @@ class ComfyUIAccelerator:
         
         self.ui.show_info("Checking system components...")
         
-        # Quick check
-        healthy, status = self.checker.run_quick_check()
+        # Get full components status
+        components = self.checker.check_components()
+        
+        # Calculate healthy based on all components
+        healthy = all([
+            components.triton,
+            components.sageattention,
+            components.pytorch,
+            components.include_folder,
+            components.libs_folder
+        ])
         
         print()
-        self.ui.show_component_status(status)
+        self.ui.show_component_status(components.__dict__)
         
         # System info
         print()
@@ -383,4 +392,5 @@ if __name__ == "__main__":
     config = AppConfig(repo_base=repo_url)
     app = ComfyUIAccelerator(config)
     app.run()
+
 
