@@ -1,5 +1,10 @@
 # 🚀 ComfyUI Accelerator v3.0
 
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
+[![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
+[![Python](https://img.shields.io/badge/python-3.12+-green.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
+[![License](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
+
 **Ускоряет ComfyUI в 2-3 раза с помощью оптимизации Triton и SageAttention**
 
 🌐 **Языки**: [English](https://github.com/freyandere/TRSA-Comfyui_installer/tree/main) | [Русский](https://github.com/freyandere/TRSA-Comfyui_installer/tree/main-ru)
