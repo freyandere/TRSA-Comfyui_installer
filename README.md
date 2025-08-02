@@ -381,16 +381,26 @@ Apache License 2.0  - see [LICENSE](LICENSE) file for details.
 
 ---
 
+## 🙏 Acknowledgments
+
+Special thanks to the developers of projects that made this possible:
+
+- **[Triton Windows](https://github.com/woct0rdho/triton-windows)** - Triton port for Windows by [@woct0rdho](https://github.com/woct0rdho) and the community
+- **[SageAttention](https://github.com/thu-ml/SageAttention)** - Quantized attention from Tsinghua University researchers
+- **[ComfyUI](https://github.com/comfyanonymous/ComfyUI)** - Powerful node-based interface by [@comfyanonymous](https://github.com/comfyanonymous)
+- **[Telegram channel - Psy Eyes](https://t.me/Psy_Eyes)** - for highlighting the repository and community support
+
+Without their incredible work, this project would not have been possible! 🚀
+
 ## ⭐ Support the Project
 
 If ComfyUI Accelerator helped speed up your workflows:
+
 - ⭐ **Star** the repository
 - 🐛 **Report** issues you encounter  
 - 💡 **Suggest** new features
 - 🤝 **Contribute** improvements
 - 📢 **Share** with the community
-
----
 
 ## 🔗 Links
 
@@ -400,7 +410,12 @@ If ComfyUI Accelerator helped speed up your workflows:
 - **💬 Discussions**: [Community Forum](https://github.com/freyandere/TRSA-Comfyui_installer/discussions)
 - **📚 Wiki**: [Documentation](https://github.com/freyandere/TRSA-Comfyui_installer/wiki)
 
----
+### 🔗 **Related Projects**
+
+- **[Triton Windows](https://github.com/woct0rdho/triton-windows)** - GPU compiler for acceleration
+- **[SageAttention](https://github.com/thu-ml/SageAttention)** - Quantized attention mechanisms
+- **[ComfyUI](https://github.com/comfyanonymous/ComfyUI)** - Node-based interface for AI
 
 *Made with ❤️ for the ComfyUI community*
-```
+
+⁂
