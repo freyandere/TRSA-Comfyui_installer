@@ -19,7 +19,7 @@ from dataclasses import dataclass
 @dataclass
 class AppConfig:
     """Application configuration"""
-    repo_base: str = "https://raw.githubusercontent.com/your-username/comfyui-accelerator/main"
+    repo_base: str = "https://raw.githubusercontent.com/freyandere/TRSA-Comfyui_installer/dev"
     app_version: str = "3.0"
     modules: list = None
     
@@ -383,3 +383,4 @@ if __name__ == "__main__":
     config = AppConfig(repo_base=repo_url)
     app = ComfyUIAccelerator(config)
     app.run()
+
