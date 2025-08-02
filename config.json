@@ -1,0 +1,43 @@
+{
+  "app": {
+    "name": "ComfyUI Accelerator",
+    "version": "3.0",
+    "description": "Makes ComfyUI 2-3x faster with Triton and SageAttention"
+  },
+  "repository": {
+    "base_url": "https://raw.githubusercontent.com/your-username/comfyui-accelerator/main",
+    "modules": [
+      "core_app.py",
+      "installer.py",
+      "checker.py", 
+      "ui_manager.py"
+    ]
+  },
+  "components": {
+    "triton": {
+      "version": "3.3.0",
+      "install_command": "triton==3.3.0"
+    },
+    "sageattention": {
+      "wheel_filename": "sageattention-2.2.0%2Bcu128torch2.7.1.post1-cp39-abi3-win_amd64.whl",
+      "wheel_url": "https://github.com/freyandere/TRSA-Comfyui_installer/raw/main/sageattention-2.2.0%2Bcu128torch2.7.1.post1-cp39-abi3-win_amd64.whl"
+    },
+    "include_libs": {
+      "zip_filename": "python_3.12.7_include_libs.zip",
+      "zip_url": "https://github.com/freyandere/TRSA-Comfyui_installer/raw/main/python_3.12.7_include_libs.zip"
+    }
+  },
+  "ui": {
+    "supported_languages": ["ru", "en"],
+    "default_language": "auto",
+    "theme": {
+      "progress_char": "█",
+      "empty_char": "░"
+    }
+  },
+  "installation": {
+    "timeout_seconds": 300,
+    "retry_attempts": 3,
+    "verify_after_install": true
+  }
+}
