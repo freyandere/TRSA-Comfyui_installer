@@ -47,7 +47,7 @@
 
 или через curl
 ```bash
-curl -O https://raw.githubusercontent.com/freyandere/TRSA-Comfyui_installer/main-ru/launcher.bat
+curl -O https://raw.githubusercontent.com/freyandere/TRSA-Comfyui_installer/refs/heads/main/TRSA_v3_ru.en.bat
 ```
 
 
