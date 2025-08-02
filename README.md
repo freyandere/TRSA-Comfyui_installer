@@ -2,8 +2,8 @@
 
 [![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
-[![Python](https://img.shields.io/badge/python-3.9+-green.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
+[![Python](https://img.shields.io/badge/python-3.12+-green.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
+[![License](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
 
 **Makes ComfyUI 2-3x faster with Triton and SageAttention optimization**
 
@@ -49,29 +49,40 @@
 ## ⚡ Quick Start
 
 ### 1️⃣ **Download**
-Download the lightweight launcher (70 lines)
-curl -O https://raw.githubusercontent.com/freyandere/TRSA-Comfyui_installer/main/launcher.bat
 
-text
+# [Download the lightweight launcher (70 lines)](https://github.com/freyandere/TRSA-Comfyui_installer/releases/tag/v3_ru.en)
+
+
+or via curl
+```
+curl -O https://raw.githubusercontent.com/freyandere/TRSA-Comfyui_installer/main/launcher.bat
+```
 
 ### 2️⃣ **Place**
 Put `launcher.bat` in your ComfyUI folder:
+```
+
 ComfyUI_windows_portable/
 └── python_embeded/
-├── python.exe ← Required
-└── launcher.bat ← Place here
+├── python.exe          ← Required
+└── launcher.bat        ← Place here
 
-text
+```
 
 ### 3️⃣ **Run**
-Double-click launcher.bat or run:
+```
+
+
+# Double-click launcher.bat or run:
+
 launcher.bat
 
-text
+```
 
 ### 4️⃣ **Install**
 - Choose **1. 🚀 SPEED UP MY COMFYUI**
 - Watch the magic happen automatically
+- Select number 5 to exit (will cleanup all the temp files)
 - Restart ComfyUI to enjoy 2-3x speed boost!
 
 ---
@@ -85,6 +96,8 @@ text
 4. **Dependencies** - Automatic pip upgrade and requirements
 
 ### 🎮 **Installation Process**
+```
+
 [██████████] 100% Installation Complete!
 
 ✅ pip upgraded successfully
@@ -96,7 +109,7 @@ text
 🎉 ComfyUI is now 2-3x faster!
 💡 Restart ComfyUI to apply changes
 
-text
+```
 
 ---
 
@@ -130,19 +143,17 @@ text
 ## 🚀 Performance
 
 ### 📈 **Benchmark Results**
+```
+
 🎮 GPU: NVIDIA GeForce RTX 4090
-⏱️ Benchmark: 0.40ms average
+⏱️  Benchmark: 0.40ms average
 🔥 Performance: 42,960.5 GFLOPS
 🎯 Health Score: 100% (A+ Excellent)
 
-text
+```
 
 ### ⚡ **Speed Improvements**
-- **Text Generation**: 2-3x faster
-- **Image Generation**: 2x faster  
-- **Video Generation**: 3x faster (with SageAttention)
-- **Memory Usage**: 20-30% reduction
-- **VRAM Efficiency**: Optimized attention mechanisms
+See official [repo](https://github.com/thu-ml/SageAttention) .
 
 ### 📊 **Before vs After**
 | Workflow | Before | After | Speedup |
@@ -189,7 +200,11 @@ text
 ## 🔍 Diagnostics
 
 ### 🎯 **Health Check**
-Quick system status
+```
+
+
+# Quick system status
+
 Choose: 2. 🔍 Check Installation
 
 ✅ Triton installed
@@ -200,13 +215,17 @@ Choose: 2. 🔍 Check Installation
 
 🎉 All systems operational!
 
-text
+```
 
 ### 📊 **Detailed Report**
-Comprehensive analysis
+```
+
+
+# Comprehensive analysis
+
 Choose: 4. 📊 Detailed Report
 
-🖥️ SYSTEM INFORMATION
+🖥️  SYSTEM INFORMATION
 🐍 Python: 3.12.10
 🧠 PyTorch: 2.7.1+cu128
 🔥 CUDA: 12.8
@@ -214,12 +233,12 @@ Choose: 4. 📊 Detailed Report
 
 🚀 GPU PERFORMANCE
 🎮 Device: NVIDIA GeForce RTX 4090
-⏱️ Average time: 0.40ms
+⏱️  Average time: 0.40ms
 🔥 Performance: 42,960.5 GFLOPS
 
 🎯 HEALTH SCORE: 100% (A+ Excellent)
 
-text
+```
 
 ### 🏥 **Health Scoring System**
 - **A+ (90-100%)**: Excellent - All systems optimal
@@ -236,26 +255,32 @@ text
 ### 🚨 **Common Issues**
 
 #### **"Python not found"**
+```
+
 ❌ ERROR: python.exe not found!
 📍 Place launcher.bat in folder with python.exe
 Usually: ComfyUI_windows_portable\python_embedded\
 
-text
+```
 **Solution**: Move `launcher.bat` to the correct folder with `python.exe`
 
 #### **"Triton installation failed"**
+```
+
 ❌ Triton installation failed: Package conflicts
 
-text
+```
 **Solutions**:
 1. Run **3. 🛠️ Reinstall Everything** (cleans conflicts)
 2. Update PyTorch: `pip install torch --upgrade`
 3. Clear pip cache: `pip cache purge`
 
 #### **"SageAttention download failed"**
+```
+
 ❌ SageAttention download failed: Network error
 
-text
+```
 **Solutions**:
 1. Check internet connection
 2. Disable antivirus temporarily
@@ -263,26 +288,36 @@ text
 4. Use manual installation (see docs)
 
 #### **"Encoding error"**
+```
+
 ❌ Bootstrap failed: 'charmap' codec can't decode
 
-text
+```
 **Solution**: Use the updated launcher with UTF-8 support
 
 ### 🔧 **Manual Installation**
 If automatic installation fails:
 
-1. Install Triton manually
+```
+
+
+# 1. Install Triton manually
+
 python -m pip install -U "triton-windows<3.4"
 
-2. Download SageAttention wheel
-Visit: https://github.com/freyandere/TRSA-Comfyui_installer/releases
-3. Install from wheel
+# 2. Download SageAttention wheel
+
+# Visit: https://github.com/freyandere/TRSA-Comfyui_installer/releases
+
+# 3. Install from wheel
+
 python -m pip install sageattention-2.2.0*.whl
 
-4. Verify installation
+# 4. Verify installation
+
 python -c "import triton, sageattention; print('✅ Success!')"
 
-text
+```
 
 ### 📞 **Getting Help**
 - **Issues**: [GitHub Issues](https://github.com/freyandere/TRSA-Comfyui_installer/issues)
@@ -294,28 +329,36 @@ text
 ## 🤝 Contributing
 
 ### 🛠️ **Development Setup**
-Clone repository
+```
+
+
+# Clone repository
+
 git clone https://github.com/freyandere/TRSA-Comfyui_installer.git
 cd TRSA-Comfyui_installer
 
-Edit modules
+# Edit modules
+
 code core_app.py installer.py checker.py ui_manager.py
 
-Test changes
+# Test changes
+
 launcher.bat
 
-text
+```
 
 ### 📋 **Module Structure**
-📁 Repository/
-├── 🐍 core_app.py # Main application (380 lines)
-├── 🐍 installer.py # Installation logic (280 lines)
-├── 🐍 checker.py # System diagnostics (420 lines)
-├── 🐍 ui_manager.py # Interface manager (580 lines)
-├── 📄 config.json # Configuration
-└── 📄 launcher.bat # Bootstrap (70 lines)
+```
 
-text
+📁 Repository/
+├── 🐍 core_app.py       \# Main application (380 lines)
+├── 🐍 installer.py      \# Installation logic (280 lines)
+├── 🐍 checker.py        \# System diagnostics (420 lines)
+├── 🐍 ui_manager.py     \# Interface manager (580 lines)
+├── 📄 config.json       \# Configuration
+└── 📄 launcher.bat      \# Bootstrap (70 lines)
+
+```
 
 ### 🎯 **Contributing Guidelines**
 1. **Fork** the repository
@@ -334,7 +377,7 @@ text
 
 ## 📜 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+Apache License 2.0  - see [LICENSE](LICENSE) file for details.
 
 ---
 
@@ -360,3 +403,4 @@ If ComfyUI Accelerator helped speed up your workflows:
 ---
 
 *Made with ❤️ for the ComfyUI community*
+```
