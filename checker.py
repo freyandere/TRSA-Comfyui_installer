@@ -160,15 +160,32 @@ except ImportError:
         success, _ = self._run_python_code("import sageattention")
         status.sageattention = success
         
-        # Check folders
-        status.include_folder = os.path.exists("include")
-        status.libs_folder = os.path.exists("libs")
+        # Check folders with absolute paths for reliability
+        current_dir = os.getcwd()
+        status.include_folder = os.path.exists(os.path.join(current_dir, "include"))
+        status.libs_folder = os.path.exists(os.path.join(current_dir, "libs"))
         
         # Check PyTorch
         success, _ = self._run_python_code("import torch")
         status.pytorch = success
         
         return status
+    
+    def run_quick_check(self) -> Tuple[bool, Dict[str, bool]]:
+        """Quick health check - returns overall status and component status"""
+        components = self.check_components()
+        
+        quick_status = {
+            'triton': components.triton,
+            'sageattention': components.sageattention,
+            'include_folder': components.include_folder,
+            'libs_folder': components.libs_folder,
+            'pytorch': components.pytorch
+        }
+        
+        overall_healthy = all(quick_status.values())
+        
+        return overall_healthy, quick_status
     
     def run_gpu_benchmark(self) -> Dict[str, Any]:
         """Run simple GPU performance test"""
@@ -402,3 +419,4 @@ if __name__ == "__main__":
         print("\n📊 Generating detailed report...")
         report = checker.generate_detailed_report()
         print(f"Health Score: {report['health_score']['percentage']}% ({report['health_score']['grade']})")
+
