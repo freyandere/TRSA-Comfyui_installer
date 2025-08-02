@@ -394,6 +394,15 @@ class UIManager:
                 else:
                     self.show_error(self.t(fail_key))
         
+        # Check folders (support both 'folders' and separate keys)
+        include_ok = components.get('include_folder', components.get('folders', False))
+        libs_ok = components.get('libs_folder', components.get('folders', False))
+        
+        if include_ok and libs_ok:
+            self.show_success(self.t('folders_ok'))
+        else:
+            self.show_error(self.t('folders_missing'))
+        
         # Check folders
         if components.get('include_folder') and components.get('libs_folder'):
             self.show_success(self.t('folders_ok'))
@@ -474,3 +483,4 @@ if __name__ == "__main__":
     
     while ui.show_menu(menu_items):
         pass
+
