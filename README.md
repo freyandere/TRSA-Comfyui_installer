@@ -54,7 +54,7 @@
 
 or via curl
 ```
-curl -O https://raw.githubusercontent.com/freyandere/TRSA-Comfyui_installer/main/launcher.bat
+curl -O https://raw.githubusercontent.com/freyandere/TRSA-Comfyui_installer/refs/heads/main/TRSA_v3_ru.en.bat
 ```
 
 ### 2️⃣ **Place**
