@@ -39,7 +39,6 @@
 - **Smart diagnostics**: A+ to F health scoring system
 
 ### 🛡️ **Bulletproof Reliability**
-- **Signal handling**: Graceful cleanup on any exit (Ctrl+C, window close)
 - **UTF-8 support**: Proper Unicode handling
 - **Error recovery**: Detailed diagnostics with solutions
 - **Network resilience**: Retry logic with fallback methods
