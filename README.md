@@ -49,12 +49,12 @@
 
 ### 1️⃣ **Download**
 
-# [Download the lightweight launcher (70 lines)](https://github.com/freyandere/TRSA-Comfyui_installer/releases/tag/v3_ru.en)
+# [Download the lightweight launcher (70 lines)](https://github.com/freyandere/TRSA-Comfyui_installer/releases/tag/v2_ru.en)
 
 
 or via curl
 ```
-curl -O https://raw.githubusercontent.com/freyandere/TRSA-Comfyui_installer/refs/heads/main/TRSA_v3_ru.en.bat
+curl -O https://github.com/freyandere/TRSA-Comfyui_installer/releases/download/v.2/TRSA_installer_ru.en.bat
 ```
 
 ### 2️⃣ **Place**
@@ -64,7 +64,7 @@ Put `TRSA_v3_ru.en.bat` in your ComfyUI folder:
 ComfyUI_windows_portable/
 └── python_embeded/
 ├── python.exe          ← Required
-└── TRSA_v3_ru.en.bat        ← Place here
+└── TRSA_v3ru.en.bat        ← Place here
 
 ```
 
