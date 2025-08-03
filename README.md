@@ -53,21 +53,21 @@ curl -O https://github.com/freyandere/TRSA-Comfyui_installer/releases/download/v
 
 ### 2️⃣ **Поместите**
 
-Поместите `TRSA_v3_ru.en.bat` в папку ComfyUI:
+Поместите `TRSA_installer_ru.en.bat` в папку ComfyUI:
 
 ```
 ComfyUI_windows_portable/
 └── python_embeded/
     ├── python.exe          ← Обязательно
-    └── TRSA_v3_ru.en.bat        ← Поместить сюда
+    └── TRSA_installer_ru.en.bat        ← Поместить сюда
 ```
 
 
 ### 3️⃣ **Запустите**
 
 ```bash
-# Дважды кликните по TRSA_v3_ru.en.bat или запустите:
-TRSA_v3_ru.en.bat
+# Дважды кликните по TRSA_installer_ru.en.bat или запустите:
+TRSA_installer_ru.en.bat
 ```
 
 
@@ -254,11 +254,11 @@ TRSA_v3_ru.en.bat
 
 ```bash
 ❌ ОШИБКА: python.exe не найден!
-📍 Поместите TRSA_v3_ru.en.bat в папку с python.exe
+📍 Поместите TRSA_installer_ru.en.bat в папку с python.exe
    Обычно: ComfyUI_windows_portable\python_embedded\
 ```
 
-**Решение**: Переместите `TRSA_v3_ru.en.bat` в правильную папку с `python.exe`
+**Решение**: Переместите `TRSA_installer_ru.en.bat` в правильную папку с `python.exe`
 
 #### **"Установка Triton не удалась"**
 
@@ -332,7 +332,7 @@ cd TRSA-Comfyui_installer
 code core_app.py installer.py checker.py ui_manager.py
 
 # Тестируйте изменения
-TRSA_v3_ru.en.bat
+TRSA_installer_ru.en.bat
 ```
 
 
@@ -345,7 +345,7 @@ TRSA_v3_ru.en.bat
 ├── 🐍 checker.py        # Системная диагностика (420 строк)
 ├── 🐍 ui_manager.py     # Менеджер интерфейса (580 строк)
 ├── 📄 config.json       # Конфигурация
-└── 📄 TRSA_v3_ru.en.bat      # Bootstrap (70 строк)
+└── 📄 TRSA_installer_ru.en.bat      # Bootstrap (70 строк)
 ```
 
 
