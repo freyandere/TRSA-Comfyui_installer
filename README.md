@@ -1,4 +1,4 @@
-# 🚀 ComfyUI Accelerator v3.0
+# 🚀 ComfyUI Accelerator v2.0
 
 [![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
@@ -12,7 +12,7 @@
 ---
 
 ## 📋 Table of Contents
-- [🎯 What's New in v3.0](#-whats-new-in-v30)
+- [🎯 What's New in v2.0](#-whats-new-in-v30)
 - [⚡ Quick Start](#-quick-start)
 - [🔧 Installation](#-installation)
 - [📊 System Requirements](#-system-requirements)
@@ -24,7 +24,7 @@
 
 ---
 
-## 🎯 What's New in v3.0
+## 🎯 What's New in v2.0
 
 ### 🏗️ **Complete Architecture Refactor**
 - **99.5% smaller launcher**: 1,000+ lines → **70 lines**
