@@ -43,7 +43,7 @@
 
 ### 1️⃣ **Скачайте**
 
-# [Скачать лёгкий launcher (70 строк)](https://github.com/freyandere/TRSA-Comfyui_installer/releases/tag/v3_ru.en)
+# [Скачать лёгкий launcher (70 строк)](https://github.com/freyandere/TRSA-Comfyui_installer/releases/tag/v.2)
 
 или через curl
 ```bash
