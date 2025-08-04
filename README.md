@@ -54,7 +54,7 @@
 
 or via curl
 ```
-curl -O https://github.com/freyandere/TRSA-Comfyui_installer/releases/download/v.2/TRSA_installer_ru.en.bat
+curl -O https://github.com/freyandere/TRSA-Comfyui_installer/releases/download/v.2/TRSA_installer.bat
 ```
 
 ### 2️⃣ **Place**
@@ -64,7 +64,7 @@ Put `TRSA_installer.bat` in your ComfyUI folder:
 ComfyUI_windows_portable/
 └── python_embeded/
 ├── python.exe          ← Required
-└── TRSA_v3ru.en.bat        ← Place here
+└── TRSA_installer.bat        ← Place here
 
 ```
 
