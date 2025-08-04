@@ -1,3 +1,6 @@
+#https://github.com/freyandere/TRSA-Comfyui_installer/blob/main-ru/README.md
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -154,7 +157,7 @@ venv.bak/
 # mkdocs documentation
 /site
 
-#https://github.com/freyandere/TRSA-Comfyui_installer/blob/main-ru/README.md
+
 # mypy
 .mypy_cache/
 .dmypy.json
