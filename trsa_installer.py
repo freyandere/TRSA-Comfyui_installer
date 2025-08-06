@@ -27,7 +27,7 @@ class AppConfig:
     
     # URLs
     PYTORCH_INSTALL_URL: str = "https://download.pytorch.org/whl/cu128"
-    SAGEATTENTION_WHEEL_URL: str = "https://github.com/freyandere/TRSA-Comfyui_installer/raw/main/sageattention-2.2.0%2Bcu128torch2.7.1.post1-cp39-abi3-win_amd64.whl"
+    SAGEATTENTION_WHEEL_URL: str = "https://github.com/freyandere/TRSA-Comfyui_installer/raw/refs/heads/main/sageattention-2.2.0+cu128torch2.7.1.post1-cp39-abi3-win_amd64.whl"
     INCLUDE_LIBS_URL: str = "https://github.com/freyandere/TRSA-Comfyui_installer/raw/main/python_3.12.7_include_libs.zip"
     
     # Таймауты
