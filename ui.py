@@ -1,25 +1,53 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-TRSA ComfyUI Accelerator v5.1 - User Interface & Localization
-Управление локализацией и пользовательским интерфейсом
+TRSA ComfyUI Accelerator v5.1 - UI & Localization (Temporary Module)
+Управление локализацией и пользовательским интерфейсом для bat-запуска
 """
 import os
 import subprocess
 import locale
+import sys
 from typing import Dict, Any, Optional
-from config import Config
+
+# Импорт config с обработкой временных имён модулей
+try:
+    if 'temp_config' in sys.modules:
+        from temp_config import Config
+    else:
+        # Попытка импорта как временного модуля
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("temp_config", "temp_config.py")
+        if spec and spec.loader:
+            temp_config = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(temp_config)
+            Config = temp_config.Config
+        else:
+            from config import Config
+except ImportError:
+    # Fallback для development
+    try:
+        from config import Config
+    except ImportError:
+        # Создаём минимальную конфигурацию если ничего не найдено
+        class Config:
+            APP_VERSION = "5.1"
+            TARGET_PYTORCH_VERSION = "2.7.1"
+            MAX_PYTORCH_VERSION = "2.7.9"
+            LOCALE_ENV_VARS = ['LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE']
+            REGISTRY_LOCALE_PATH = 'HKCU\\Control Panel\\International'
+            REGISTRY_TIMEOUT = 5
 
 
 class LocalizationManager:
-    """Менеджер локализации с автоопределением языка"""
+    """Менеджер локализации с автоопределением языка для bat-контекста"""
     
     def __init__(self):
         self.language = self._detect_language()
         self._messages = self._load_all_messages()
     
     def _detect_language(self) -> str:
-        """Современное определение языка системы"""
+        """Определение языка системы с улучшенной обработкой для Windows"""
         try:
             # 1. Проверка переменных окружения
             for env_var in Config.LOCALE_ENV_VARS:
@@ -27,32 +55,51 @@ class LocalizationManager:
                 if lang.startswith('ru'):
                     return 'ru'
             
-            # 2. Windows Registry (только для Windows)
+            # 2. Windows Registry (оптимизировано для bat-контекста)
             if os.name == 'nt':
                 try:
                     result = subprocess.run([
                         'reg', 'query', Config.REGISTRY_LOCALE_PATH,
                         '/v', 'LocaleName'
-                    ], capture_output=True, text=True, timeout=Config.REGISTRY_TIMEOUT)
+                    ], capture_output=True, text=True, 
+                    timeout=Config.REGISTRY_TIMEOUT, shell=True)
                     
                     if result.returncode == 0:
                         for line in result.stdout.split('\n'):
                             if 'LocaleName' in line and 'ru' in line.lower():
                                 return 'ru'
-                except (subprocess.TimeoutExpired, FileNotFoundError):
+                except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+                    # В bat-контексте могут быть проблемы с PATH
                     pass
             
-            # 3. Python locale API
+            # 3. Python locale API с дополнительной обработкой ошибок
             try:
                 current_locale = locale.getlocale()
                 if current_locale[0] and current_locale[0].lower().startswith('ru'):
                     return 'ru'
                     
-                encoding = locale.getencoding()
-                if 'ru' in encoding.lower():
-                    return 'ru'
+                # Проверка кодировки
+                try:
+                    encoding = locale.getencoding()
+                    if 'ru' in encoding.lower():
+                        return 'ru'
+                except AttributeError:
+                    # На старых версиях Python getencoding() может отсутствовать
+                    pass
+                    
             except (AttributeError, locale.Error):
                 pass
+            
+            # 4. Проверка системной кодировки Windows
+            if os.name == 'nt':
+                try:
+                    import ctypes
+                    kernel32 = ctypes.windll.kernel32
+                    lcid = kernel32.GetUserDefaultLCID()
+                    if lcid in (1049, 2073):  # Russian LCID codes
+                        return 'ru'
+                except (ImportError, AttributeError, OSError):
+                    pass
                 
         except Exception:
             pass
@@ -67,13 +114,14 @@ class LocalizationManager:
         }
     
     def _get_russian_messages(self) -> Dict[str, str]:
-        """Русские сообщения"""
+        """Русские сообщения (полная версия)"""
         return {
             # Заголовки и основной интерфейс
             'app_title': f'TRSA ComfyUI Accelerator v{Config.APP_VERSION} - Умная установка',
             'lang_choice': 'Выберите язык / Choose language: 1-English, 2-Русский: ',
             'separator': '=' * 60,
             'press_enter': 'Нажмите Enter для выхода...',
+            'bat_context_detected': 'Обнаружен запуск через bat-файл',
             
             # Этапы установки
             'step_checking_python': 'Проверка версии Python',
@@ -157,13 +205,14 @@ class LocalizationManager:
         }
     
     def _get_english_messages(self) -> Dict[str, str]:
-        """English messages"""
+        """English messages (полная версия)"""
         return {
             # Headers and main interface
             'app_title': f'TRSA ComfyUI Accelerator v{Config.APP_VERSION} - Smart Installation',
             'lang_choice': 'Choose language / Выберите язык: 1-English, 2-Русский: ',
             'separator': '=' * 60,
             'press_enter': 'Press Enter to exit...',
+            'bat_context_detected': 'Bat-file execution context detected',
             
             # Installation steps
             'step_checking_python': 'Checking Python version',
@@ -268,22 +317,12 @@ class LocalizationManager:
         return message
     
     def set_language(self, language: str) -> None:
-        """
-        Установить язык интерфейса
-        
-        Args:
-            language: код языка ('en' или 'ru')
-        """
+        """Установить язык интерфейса"""
         if language in self._messages:
             self.language = language
     
     def ask_language_choice(self) -> str:
-        """
-        Интерактивный выбор языка пользователем
-        
-        Returns:
-            Выбранный код языка
-        """
+        """Интерактивный выбор языка пользователем"""
         print(self.get_message('lang_choice'), end='')
         
         try:
@@ -299,25 +338,31 @@ class LocalizationManager:
 
 
 class UserInterface:
-    """Класс для управления пользовательским интерфейсом"""
+    """Класс для управления пользовательским интерфейсом в bat-контексте"""
     
     def __init__(self, localization: LocalizationManager):
         self.loc = localization
+        self._is_bat_context = self._detect_bat_context()
+    
+    def _detect_bat_context(self) -> bool:
+        """Определение запуска через bat-файл"""
+        return (
+            'temp_' in __file__ or 
+            any('temp_' in name for name in sys.modules.keys()) or
+            os.path.exists('temp_main.py')
+        )
     
     def print_header(self) -> None:
         """Вывод заголовка приложения"""
         print(self.loc.get_message('app_title'))
         print(self.loc.get_message('separator'))
+        
+        if self._is_bat_context:
+            print(f"🔄 {self.loc.get_message('bat_context_detected')}")
+            print()
     
     def print_step(self, step: int, total: int, message_key: str) -> None:
-        """
-        Вывод информации о текущем шаге
-        
-        Args:
-            step: номер шага
-            total: общее количество шагов
-            message_key: ключ сообщения для локализации
-        """
+        """Вывод информации о текущем шаге"""
         print(f"\n{step}/{total} {self.loc.get_message(message_key)}...")
     
     def print_success(self, message: str) -> None:
@@ -333,16 +378,7 @@ class UserInterface:
         print(f"⚠️ {message}")
     
     def ask_pytorch_action(self, current_version: str, action_type: str) -> bool:
-        """
-        Запрос действия пользователя относительно PyTorch
-        
-        Args:
-            current_version: текущая версия PyTorch
-            action_type: тип действия ('update' или 'downgrade')
-            
-        Returns:
-            True если пользователь согласен на действие
-        """
+        """Запрос действия пользователя относительно PyTorch"""
         # Определяем тип предупреждения и выбора
         if action_type == 'update':
             warning_key = 'warning_old_version'
@@ -384,12 +420,7 @@ class UserInterface:
                 self.print_error(self.loc.get_message('invalid_choice'))
     
     def print_final_result(self, success: bool) -> None:
-        """
-        Вывод финального результата установки
-        
-        Args:
-            success: успешность установки
-        """
+        """Вывод финального результата установки"""
         print(f"\n{self.loc.get_message('separator')}")
         
         if success:
@@ -397,12 +428,27 @@ class UserInterface:
             print(self.loc.get_message('restart_note'))
         else:
             self.print_warning(self.loc.get_message('installation_partial'))
+        
+        if self._is_bat_context:
+            print(f"\n🧹 Временные файлы будут удалены bat-скриптом")
     
     def wait_for_exit(self) -> None:
-        """Ожидание нажатия Enter для выхода"""
+        """Ожидание нажатия Enter для выхода (адаптировано для bat)"""
         print()
         try:
             print(self.loc.get_message('press_enter'))
         except:
             print("Press Enter to exit... / Нажмите Enter для выхода...")
-        input()
+        
+        # В bat-контексте не вызываем input(), так как bat-файл сам делает pause
+        if not self._is_bat_context:
+            input()
+
+
+# Проверка корректности импорта в контексте bat-запуска
+if __name__ == "__main__":
+    print("UI module loaded successfully")
+    loc = LocalizationManager()
+    ui = UserInterface(loc)
+    print(f"Language detected: {loc.language}")
+    print(f"Bat context: {ui._is_bat_context}")
