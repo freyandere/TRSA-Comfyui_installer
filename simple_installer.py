@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ComfyUI Accelerator v5.0 - With PyTorch Version Management
-Интегрированная проверка и управление версиями PyTorch
+TRSA ComfyUI Accelerator v5.0 - Полностью локализованная версия
 """
 import subprocess
 import urllib.request
@@ -12,12 +11,11 @@ import os
 import warnings
 from pathlib import Path
 from typing import Tuple, Dict, Optional
-from packaging import version
 
 
 class EnhancedSimpleInstaller:
     """
-    Простой установщик ComfyUI Accelerator с интеллектуальным управлением PyTorch
+    TRSA ComfyUI Accelerator с полной двуязычной поддержкой
     """
     
     # Константы для версий
@@ -83,14 +81,15 @@ class EnhancedSimpleInstaller:
         return 'en'
     
     def _load_messages(self) -> Dict[str, Dict[str, str]]:
-        """Загрузка сообщений для двух языков"""
+        """Загрузка ВСЕХ сообщений для двух языков"""
         return {
             'ru': {
-                'header': '🚀 ComfyUI Accelerator v5.0 - Умная установка',
+                # Основные сообщения интерфейса
+                'header': '🚀 TRSA ComfyUI Accelerator v5.0 - Умная установка',
                 'lang_choice': 'Выберите язык / Choose language: 1-English, 2-Русский: ',
                 'checking_python': 'Проверка версии Python',
                 'checking_pytorch': 'Проверка версии PyTorch',
-                'pytorch_ok': 'PyTorch версии актуальной',
+                'pytorch_ok': 'PyTorch версия актуальна',
                 'pytorch_missing': 'PyTorch не найден - требуется установка',
                 'pytorch_outdated': 'PyTorch устарел - рекомендуется обновление',
                 'pytorch_update_prompt': 'Обновить PyTorch до версии 2.7.1?',
@@ -104,10 +103,55 @@ class EnhancedSimpleInstaller:
                 'success': 'Установка завершена успешно!',
                 'restart_note': '💡 Перезапустите ComfyUI для применения ускорения',
                 'some_failed': 'Некоторые компоненты не установились',
-                'press_enter': 'Нажмите Enter для выхода...'
+                'press_enter': 'Нажмите Enter для выхода...',
+                
+                # Дополнительные сообщения для полной локализации
+                'current_version': 'Текущая версия',
+                'required_version': 'Требуемая версия',
+                'sage_requirement': 'SageAttention2 требует PyTorch {version}+ для оптимальной производительности',
+                'continuing_with_version': 'Продолжаем с PyTorch {version}',
+                'compatibility_warning': 'Предупреждение: Могут возникнуть проблемы совместимости!',
+                'consider_updating': 'Рассмотрите возможность обновления PyTorch позже при возникновении проблем',
+                'invalid_choice': 'Пожалуйста, введите 1 или 2',
+                'installing_pytorch_cuda': 'Установка PyTorch {version} с CUDA 12.8...',
+                'download_time_warning': 'Это может занять несколько минут (~2.5GB загрузка)',
+                'pytorch_installed_success': 'PyTorch {version} установлен успешно',
+                'pytorch_installed_no_check': 'PyTorch установлен (проверка версии не удалась)',
+                'pytorch_install_failed': 'Установка PyTorch не удалась: {error}',
+                'continuing_current_pytorch': 'Продолжаем с текущей версией PyTorch...',
+                
+                # Сообщения об ошибках версий
+                'python_too_old': 'Python {version} слишком старый (требуется {min_version}+)',
+                'python_version_parse_error': 'Не удается распознать версию Python: {output}',
+                'python_version_detect_error': 'Не удается определить версию Python',
+                'pytorch_version_detect_error': 'Не удается определить версию PyTorch',
+                'pytorch_version_check_failed': 'PyTorch {version} - проверка версии не удалась',
+                
+                # Сообщения об установке компонентов
+                'pip_upgraded': 'pip обновлен успешно',
+                'pip_upgrade_failed': 'Обновление pip не удалось: {error}',
+                'triton_installed': 'Triton установлен',
+                'triton_failed': 'Установка Triton не удалась: {error}',
+                'sage_download_failed': 'Не удалось скачать wheel файл SageAttention',
+                'sage_installed': 'SageAttention установлен',
+                'sage_failed': 'Установка SageAttention не удалась: {error}',
+                
+                # Сообщения об include/libs
+                'include_libs_exist': 'Папки include/libs уже существуют',
+                'include_libs_download_failed': 'Не удалось скачать архив include/libs',
+                'include_libs_created': 'Папки include/libs созданы',
+                'include_libs_extract_no_folders': 'Распаковка завершена, но папки не найдены',
+                'include_libs_extract_failed': 'Распаковка не удалась: {error}',
+                
+                # Системные сообщения
+                'installation_cancelled': 'Установка отменена пользователем',
+                'critical_error': 'Критическая ошибка: {error}',
+                'command_timeout': 'Превышено время ожидания команды',
+                'python_not_found': 'Исполняемый файл Python не найден'
             },
             'en': {
-                'header': '🚀 ComfyUI Accelerator v5.0 - Smart Installation',
+                # Основные сообщения интерфейса
+                'header': '🚀 TRSA ComfyUI Accelerator v5.0 - Smart Installation',
                 'lang_choice': 'Choose language / Выберите язык: 1-English, 2-Русский: ',
                 'checking_python': 'Checking Python version',
                 'checking_pytorch': 'Checking PyTorch version',
@@ -125,13 +169,68 @@ class EnhancedSimpleInstaller:
                 'success': 'Installation completed successfully!',
                 'restart_note': '💡 Restart ComfyUI to apply 2-3x speed improvements',
                 'some_failed': 'Some components failed to install',
-                'press_enter': 'Press Enter to exit...'
+                'press_enter': 'Press Enter to exit...',
+                
+                # Дополнительные сообщения для полной локализации
+                'current_version': 'Current version',
+                'required_version': 'Required version',
+                'sage_requirement': 'SageAttention2 requires PyTorch {version}+ for optimal performance',
+                'continuing_with_version': 'Continuing with PyTorch {version}',
+                'compatibility_warning': 'Warning: You may encounter compatibility issues!',
+                'consider_updating': 'Consider updating PyTorch later if problems occur',
+                'invalid_choice': 'Please enter 1 or 2',
+                'installing_pytorch_cuda': 'Installing PyTorch {version} with CUDA 12.8...',
+                'download_time_warning': 'This may take several minutes (~2.5GB download)',
+                'pytorch_installed_success': 'PyTorch {version} installed successfully',
+                'pytorch_installed_no_check': 'PyTorch installed (version check failed)',
+                'pytorch_install_failed': 'PyTorch installation failed: {error}',
+                'continuing_current_pytorch': 'Continuing with current PyTorch version...',
+                
+                # Сообщения об ошибках версий
+                'python_too_old': 'Python {version} too old (need {min_version}+)',
+                'python_version_parse_error': 'Cannot parse Python version: {output}',
+                'python_version_detect_error': 'Cannot detect Python version',
+                'pytorch_version_detect_error': 'Cannot detect PyTorch version',
+                'pytorch_version_check_failed': 'PyTorch {version} - version check failed',
+                
+                # Сообщения об установке компонентов
+                'pip_upgraded': 'pip upgraded successfully',
+                'pip_upgrade_failed': 'pip upgrade failed: {error}',
+                'triton_installed': 'Triton installed',
+                'triton_failed': 'Triton failed: {error}',
+                'sage_download_failed': 'Failed to download SageAttention wheel',
+                'sage_installed': 'SageAttention installed',
+                'sage_failed': 'SageAttention failed: {error}',
+                
+                # Сообщения об include/libs
+                'include_libs_exist': 'include/libs folders already exist',
+                'include_libs_download_failed': 'Failed to download include/libs archive',
+                'include_libs_created': 'include/libs folders created',
+                'include_libs_extract_no_folders': 'Extraction completed but folders not found',
+                'include_libs_extract_failed': 'Extraction failed: {error}',
+                
+                # Системные сообщения
+                'installation_cancelled': 'Installation cancelled by user',
+                'critical_error': 'Critical error: {error}',
+                'command_timeout': 'Command timeout',
+                'python_not_found': 'Python executable not found'
             }
         }
     
-    def msg(self, key: str) -> str:
-        """Получить сообщение на текущем языке"""
-        return self.messages[self.language].get(key, key)
+    def msg(self, key: str, **kwargs) -> str:
+        """
+        Получить локализованное сообщение с поддержкой форматирования
+        Args:
+            key: ключ сообщения
+            **kwargs: параметры для форматирования строки
+        """
+        message = self.messages[self.language].get(key, key)
+        if kwargs:
+            try:
+                return message.format(**kwargs)
+            except (KeyError, ValueError):
+                return message
+        return message
     
     def _run_command(self, cmd: list, timeout: int = 300) -> Tuple[bool, str]:
         """Выполнение команды с обработкой ошибок"""
@@ -141,7 +240,7 @@ class EnhancedSimpleInstaller:
             )
             return result.returncode == 0, result.stdout + result.stderr
         except subprocess.TimeoutExpired:
-            return False, "Command timeout"
+            return False, self.msg('command_timeout')
         except Exception as e:
             return False, str(e)
     
@@ -166,10 +265,12 @@ class EnhancedSimpleInstaller:
                 min_version = float(self.MIN_PYTHON_VERSION)
                 if python_version >= min_version:
                     return True, f"Python {python_version} - OK"
-                return False, f"Python {python_version} too old (need {self.MIN_PYTHON_VERSION}+)"
+                return False, self.msg('python_too_old', 
+                                     version=python_version, 
+                                     min_version=self.MIN_PYTHON_VERSION)
             except ValueError:
-                return False, f"Cannot parse Python version: {output}"
-        return False, "Cannot detect Python version"
+                return False, self.msg('python_version_parse_error', output=output)
+        return False, self.msg('python_version_detect_error')
     
     def check_pytorch_version(self) -> Tuple[bool, str, Optional[str]]:
         """
@@ -190,7 +291,7 @@ class EnhancedSimpleInstaller:
         ])
         
         if not success:
-            return False, "Cannot detect PyTorch version", None
+            return False, self.msg('pytorch_version_detect_error'), None
         
         current_version = version_output.strip()
         
@@ -234,14 +335,14 @@ class EnhancedSimpleInstaller:
                 return True, f"PyTorch {current_version} - OK", current_version
                 
             except Exception:
-                return False, f"PyTorch {current_version} - version check failed", current_version
+                return False, self.msg('pytorch_version_check_failed', version=current_version), current_version
     
     def ask_pytorch_update(self, current_version: str) -> bool:
         """Запрос пользователя об обновлении PyTorch"""
         print(f"\n⚠️ {self.msg('pytorch_warning')}")
-        print(f"📊 Current version: {current_version}")
-        print(f"📊 Required version: {self.MIN_PYTORCH_VERSION}+")
-        print(f"💡 SageAttention2 requires PyTorch {self.MIN_PYTORCH_VERSION}+ for optimal performance")
+        print(f"📊 {self.msg('current_version')}: {current_version}")
+        print(f"📊 {self.msg('required_version')}: {self.MIN_PYTORCH_VERSION}+")
+        print(f"💡 {self.msg('sage_requirement', version=self.MIN_PYTORCH_VERSION)}")
         print()
         
         while True:
@@ -250,17 +351,17 @@ class EnhancedSimpleInstaller:
             if choice == '1':
                 return True
             elif choice == '2':
-                print(f"\n⚠️ Continuing with PyTorch {current_version}")
-                print("❗ Warning: You may encounter compatibility issues!")
-                print("💡 Consider updating PyTorch later if problems occur")
+                print(f"\n⚠️ {self.msg('continuing_with_version', version=current_version)}")
+                print(f"❗ {self.msg('compatibility_warning')}")
+                print(f"💡 {self.msg('consider_updating')}")
                 return False
             else:
-                print("❌ Please enter 1 or 2")
+                print(f"❌ {self.msg('invalid_choice')}")
     
     def install_pytorch(self) -> Tuple[bool, str]:
         """Установка PyTorch 2.7.1 с CUDA 12.8"""
-        print(f"📦 Installing PyTorch {self.MIN_PYTORCH_VERSION} with CUDA 12.8...")
-        print("⏳ This may take several minutes (~2.5GB download)")
+        print(f"📦 {self.msg('installing_pytorch_cuda', version=self.MIN_PYTORCH_VERSION)}")
+        print(f"⏳ {self.msg('download_time_warning')}")
         
         success, output = self._run_command([
             self.python_exe, "-m", "pip", "install", 
@@ -277,25 +378,29 @@ class EnhancedSimpleInstaller:
             
             if check_success:
                 new_version = version_output.strip()
-                return True, f"PyTorch {new_version} installed successfully"
+                return True, self.msg('pytorch_installed_success', version=new_version)
             else:
-                return True, "PyTorch installed (version check failed)"
+                return True, self.msg('pytorch_installed_no_check')
         else:
-            return False, f"PyTorch installation failed: {output[:300]}"
+            return False, self.msg('pytorch_install_failed', error=output[:300])
     
     def upgrade_pip(self) -> Tuple[bool, str]:
         """Обновление pip до последней версии"""
         success, output = self._run_command([
             self.python_exe, "-m", "pip", "install", "--upgrade", "pip"
         ])
-        return success, "pip upgraded successfully" if success else f"pip upgrade failed: {output[:200]}"
+        return (success, 
+                self.msg('pip_upgraded') if success 
+                else self.msg('pip_upgrade_failed', error=output[:200]))
     
     def install_triton(self) -> Tuple[bool, str]:
         """Установка Triton Windows"""
         success, output = self._run_command([
             self.python_exe, "-m", "pip", "install", "-U", "triton-windows<3.4"
         ])
-        return success, "Triton installed" if success else f"Triton failed: {output[:200]}"
+        return (success, 
+                self.msg('triton_installed') if success 
+                else self.msg('triton_failed', error=output[:200]))
     
     def install_sageattention(self) -> Tuple[bool, str]:
         """Установка SageAttention"""
@@ -304,7 +409,7 @@ class EnhancedSimpleInstaller:
         
         # Скачивание wheel
         if not self._download_file(wheel_url, wheel_file):
-            return False, "Failed to download SageAttention wheel"
+            return False, self.msg('sage_download_failed')
         
         # Установка из wheel
         success, output = self._run_command([
@@ -317,19 +422,21 @@ class EnhancedSimpleInstaller:
         except:
             pass
             
-        return success, "SageAttention installed" if success else f"SageAttention failed: {output[:200]}"
+        return (success, 
+                self.msg('sage_installed') if success 
+                else self.msg('sage_failed', error=output[:200]))
     
     def setup_include_libs(self) -> Tuple[bool, str]:
         """Скачивание и распаковка папок include/libs"""
         if os.path.exists("include") and os.path.exists("libs"):
-            return True, "include/libs folders already exist"
+            return True, self.msg('include_libs_exist')
         
         zip_url = "https://github.com/freyandere/TRSA-Comfyui_installer/raw/main/python_3.12.7_include_libs.zip"
         zip_file = "include_libs.zip"
         
         # Скачивание
         if not self._download_file(zip_url, zip_file):
-            return False, "Failed to download include/libs archive"
+            return False, self.msg('include_libs_download_failed')
         
         # Распаковка
         try:
@@ -338,21 +445,25 @@ class EnhancedSimpleInstaller:
             os.remove(zip_file)
             
             if os.path.exists("include") and os.path.exists("libs"):
-                return True, "include/libs folders created"
-            return False, "Extraction completed but folders not found"
+                return True, self.msg('include_libs_created')
+            return False, self.msg('include_libs_extract_no_folders')
             
         except Exception as e:
-            return False, f"Extraction failed: {str(e)}"
+            return False, self.msg('include_libs_extract_failed', error=str(e))
     
     def choose_language(self):
-        """Выбор языка пользователем"""
+        """Выбор языка пользователем с пересозданием сообщений"""
         print(self.msg('lang_choice'), end='')
         try:
             choice = input().strip()
             if choice == '1':
                 self.language = 'en'
+                # Перезагружаем сообщения после смены языка
+                self.messages = self._load_messages()
             elif choice == '2':
                 self.language = 'ru'
+                # Перезагружаем сообщения после смены языка
+                self.messages = self._load_messages()
         except:
             pass  # Оставляем автоопределенный язык
     
@@ -389,7 +500,7 @@ class EnhancedSimpleInstaller:
                         print(f"✅ {install_message}")
                     else:
                         print(f"❌ {install_message}")
-                        print("⚠️ Continuing with current PyTorch version...")
+                        print(f"⚠️ {self.msg('continuing_current_pytorch')}")
             else:
                 # PyTorch не установлен вообще
                 print(f"\n🔄 {self.msg('pytorch_installing')}...")
@@ -436,12 +547,13 @@ if __name__ == "__main__":
         installer = EnhancedSimpleInstaller()
         installer.run_installation()
     except KeyboardInterrupt:
-        print("\n👋 Installation cancelled by user")
+        print(f"\n👋 {installer.msg('installation_cancelled')}")
     except Exception as e:
-        print(f"❌ Critical error: {e}")
+        print(f"❌ {installer.msg('critical_error', error=e)}")
     finally:
         print()
         try:
+            installer = EnhancedSimpleInstaller()  # Безопасное создание для финального сообщения
             print(installer.msg('press_enter'))
         except:
             print("Press Enter to exit... / Нажмите Enter для выхода...")
