@@ -85,7 +85,7 @@ class EnhancedSimpleInstaller:
         return {
             'ru': {
                 # Основные сообщения интерфейса
-                'header': '🚀 TRSA ComfyUI Accelerator v5.0 - Умная установка',
+                'header': 'TRSA ComfyUI Accelerator v5.0 - Умная установка',
                 'lang_choice': 'Выберите язык / Choose language: 1-English, 2-Русский: ',
                 'checking_python': 'Проверка версии Python',
                 'checking_pytorch': 'Проверка версии PyTorch',
@@ -101,7 +101,7 @@ class EnhancedSimpleInstaller:
                 'installing_sage': 'Установка SageAttention',
                 'setting_up_libs': 'Настройка include/libs',
                 'success': 'Установка завершена успешно!',
-                'restart_note': '💡 Перезапустите ComfyUI для применения ускорения',
+                'restart_note': 'Перезапустите ComfyUI для применения ускорения',
                 'some_failed': 'Некоторые компоненты не установились',
                 'press_enter': 'Нажмите Enter для выхода...',
                 
@@ -151,7 +151,7 @@ class EnhancedSimpleInstaller:
             },
             'en': {
                 # Основные сообщения интерфейса
-                'header': '🚀 TRSA ComfyUI Accelerator v5.0 - Smart Installation',
+                'header': 'TRSA ComfyUI Accelerator v5.0 - Smart Installation',
                 'lang_choice': 'Choose language / Выберите язык: 1-English, 2-Русский: ',
                 'checking_python': 'Checking Python version',
                 'checking_pytorch': 'Checking PyTorch version',
@@ -167,7 +167,7 @@ class EnhancedSimpleInstaller:
                 'installing_sage': 'Installing SageAttention',
                 'setting_up_libs': 'Setting up include/libs',
                 'success': 'Installation completed successfully!',
-                'restart_note': '💡 Restart ComfyUI to apply 2-3x speed improvements',
+                'restart_note': 'Restart ComfyUI to apply 2-3x speed improvements',
                 'some_failed': 'Some components failed to install',
                 'press_enter': 'Press Enter to exit...',
                 
@@ -339,10 +339,10 @@ class EnhancedSimpleInstaller:
     
     def ask_pytorch_update(self, current_version: str) -> bool:
         """Запрос пользователя об обновлении PyTorch"""
-        print(f"\n⚠️ {self.msg('pytorch_warning')}")
-        print(f"📊 {self.msg('current_version')}: {current_version}")
-        print(f"📊 {self.msg('required_version')}: {self.MIN_PYTORCH_VERSION}+")
-        print(f"💡 {self.msg('sage_requirement', version=self.MIN_PYTORCH_VERSION)}")
+        print(f"\n{self.msg('pytorch_warning')}")
+        print(f"{self.msg('current_version')}: {current_version}")
+        print(f"{self.msg('required_version')}: {self.MIN_PYTORCH_VERSION}+")
+        print(f"{self.msg('sage_requirement', version=self.MIN_PYTORCH_VERSION)}")
         print()
         
         while True:
@@ -351,17 +351,17 @@ class EnhancedSimpleInstaller:
             if choice == '1':
                 return True
             elif choice == '2':
-                print(f"\n⚠️ {self.msg('continuing_with_version', version=current_version)}")
-                print(f"❗ {self.msg('compatibility_warning')}")
-                print(f"💡 {self.msg('consider_updating')}")
+                print(f"\n{self.msg('continuing_with_version', version=current_version)}")
+                print(f"{self.msg('compatibility_warning')}")
+                print(f"{self.msg('consider_updating')}")
                 return False
             else:
                 print(f"❌ {self.msg('invalid_choice')}")
     
     def install_pytorch(self) -> Tuple[bool, str]:
         """Установка PyTorch 2.7.1 с CUDA 12.8"""
-        print(f"📦 {self.msg('installing_pytorch_cuda', version=self.MIN_PYTORCH_VERSION)}")
-        print(f"⏳ {self.msg('download_time_warning')}")
+        print(f"{self.msg('installing_pytorch_cuda', version=self.MIN_PYTORCH_VERSION)}")
+        print(f"{self.msg('download_time_warning')}")
         
         success, output = self._run_command([
             self.python_exe, "-m", "pip", "install", 
@@ -458,11 +458,9 @@ class EnhancedSimpleInstaller:
             choice = input().strip()
             if choice == '1':
                 self.language = 'en'
-                # Перезагружаем сообщения после смены языка
                 self.messages = self._load_messages()
             elif choice == '2':
                 self.language = 'ru'
-                # Перезагружаем сообщения после смены языка
                 self.messages = self._load_messages()
         except:
             pass  # Оставляем автоопределенный язык
@@ -494,7 +492,7 @@ class EnhancedSimpleInstaller:
             if current_pytorch:
                 # PyTorch установлен, но устарел
                 if self.ask_pytorch_update(current_pytorch):
-                    print(f"\n🔄 {self.msg('pytorch_installing')}...")
+                    print(f"\n{self.msg('pytorch_installing')}...")
                     install_success, install_message = self.install_pytorch()
                     if install_success:
                         print(f"✅ {install_message}")
@@ -503,7 +501,7 @@ class EnhancedSimpleInstaller:
                         print(f"⚠️ {self.msg('continuing_current_pytorch')}")
             else:
                 # PyTorch не установлен вообще
-                print(f"\n🔄 {self.msg('pytorch_installing')}...")
+                print(f"\n{self.msg('pytorch_installing')}...")
                 install_success, install_message = self.install_pytorch()
                 if install_success:
                     print(f"✅ {install_message}")
@@ -534,7 +532,7 @@ class EnhancedSimpleInstaller:
         
         print("\n" + "=" * 60)
         if all_success:
-            print(f"🎉 {self.msg('success')}")
+            print(f"✅ {self.msg('success')}")
             print(self.msg('restart_note'))
         else:
             print(f"⚠️ {self.msg('some_failed')}")
@@ -543,18 +541,22 @@ class EnhancedSimpleInstaller:
 
 
 if __name__ == "__main__":
+    installer = None
     try:
         installer = EnhancedSimpleInstaller()
         installer.run_installation()
     except KeyboardInterrupt:
-        print(f"\n👋 {installer.msg('installation_cancelled')}")
+        print(f"\n👋 {installer.msg('installation_cancelled') if installer else 'Installation cancelled by user'}")
     except Exception as e:
-        print(f"❌ {installer.msg('critical_error', error=e)}")
+        error_msg = installer.msg('critical_error', error=e) if installer else f"Critical error: {e}"
+        print(f"❌ {error_msg}")
     finally:
         print()
         try:
-            installer = EnhancedSimpleInstaller()  # Безопасное создание для финального сообщения
-            print(installer.msg('press_enter'))
+            if installer:
+                print(installer.msg('press_enter'))
+            else:
+                print("Press Enter to exit... / Нажмите Enter для выхода...")
         except:
             print("Press Enter to exit... / Нажмите Enter для выхода...")
         input()
