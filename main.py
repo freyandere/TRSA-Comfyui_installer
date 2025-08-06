@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 TRSA ComfyUI Accelerator v5.1 - Main Logic (Temporary Module)
-Основная логика установки для bat-контекста с модульной архитектурой
+ИСПРАВЛЕНО: Корректная интерактивность и удалены лишние эмодзи
 """
 import subprocess
 import urllib.request
@@ -84,7 +84,7 @@ if ui_module:
     LocalizationManager = ui_module.LocalizationManager
     UserInterface = ui_module.UserInterface
 else:
-    # Минимальная UI для fallback
+    # ИСПРАВЛЕННЫЙ минимальный UI для fallback
     class LocalizationManager:
         def __init__(self):
             self.language = 'en'
@@ -96,14 +96,33 @@ else:
     class UserInterface:
         def __init__(self, loc):
             self.loc = loc
-        def print_header(self): print("TRSA ComfyUI Accelerator")
-        def print_step(self, step, total, key): print(f"{step}/{total} {key}")
-        def print_success(self, msg): print(f"✅ {msg}")
-        def print_error(self, msg): print(f"❌ {msg}")
-        def print_warning(self, msg): print(f"⚠️ {msg}")
-        def ask_pytorch_action(self, version, action): return True
-        def print_final_result(self, success): print("Installation completed")
-        def wait_for_exit(self): pass
+        def print_header(self): 
+            print("TRSA ComfyUI Accelerator")
+        def print_step(self, step, total, key): 
+            print(f"{step}/{total} {key}")
+        def print_success(self, msg): 
+            print(f"✅ {msg}")
+        def print_error(self, msg): 
+            print(f"❌ {msg}")
+        def print_warning(self, msg): 
+            print(f"WARNING: {msg}")
+        def ask_pytorch_action(self, version, action): 
+            # ИСПРАВЛЕНО: Правильный интерактивный запрос
+            while True:
+                try:
+                    choice = input(f"1-{action} PyTorch, 2-Continue with current version: ").strip()
+                    if choice == '1':
+                        return True
+                    elif choice == '2':
+                        return False
+                    else:
+                        print("❌ Please enter 1 or 2")
+                except (EOFError, KeyboardInterrupt):
+                    return False
+        def print_final_result(self, success): 
+            print("Installation completed")
+        def wait_for_exit(self): 
+            pass
 
 
 # === ОСНОВНЫЕ КЛАССЫ ЛОГИКИ ===
@@ -379,7 +398,7 @@ class TRSAInstaller:
         self.engine = InstallationEngine(self.system, self.ui)
     
     def run_installation(self) -> bool:
-        """Запуск полного процесса установки"""
+        """ИСПРАВЛЕНО: Корректная интерактивность установки"""
         try:
             # Выбор языка
             self.localization.ask_language_choice()
@@ -397,7 +416,7 @@ class TRSAInstaller:
                 self.ui.print_error(message)
                 return False
             
-            # Шаг 2: Проверка и управление PyTorch
+            # Шаг 2: ИСПРАВЛЕНО - Проверка и управление PyTorch с интерактивностью
             self.ui.print_step(2, 6, 'step_checking_pytorch')
             pytorch_compatible, pytorch_message, current_version, status = self.engine.check_pytorch_version()
             
@@ -405,7 +424,9 @@ class TRSAInstaller:
                 self.ui.print_warning(pytorch_message)
                 
                 if status == 'too_old':
-                    if self.ui.ask_pytorch_action(current_version, 'update'):
+                    # ИСПРАВЛЕНО: Интерактивный запрос обновления
+                    user_wants_update = self.ui.ask_pytorch_action(current_version, 'update')
+                    if user_wants_update:
                         print(f"\nInstalling PyTorch {Config.TARGET_PYTORCH_VERSION}...")
                         install_success, install_message = self.engine.install_pytorch()
                         
@@ -414,9 +435,12 @@ class TRSAInstaller:
                         else:
                             self.ui.print_error(install_message)
                             self.ui.print_warning("Continuing with current PyTorch version...")
+                    # Если пользователь выбрал "2", продолжаем с текущей версией
                 
                 elif status == 'too_new':
-                    if self.ui.ask_pytorch_action(current_version, 'downgrade'):
+                    # ИСПРАВЛЕНО: Интерактивный запрос даунгрейда
+                    user_wants_downgrade = self.ui.ask_pytorch_action(current_version, 'downgrade')
+                    if user_wants_downgrade:
                         print(f"\nDowngrading PyTorch to version {Config.TARGET_PYTORCH_VERSION}...")
                         downgrade_success, downgrade_message = self.engine.install_pytorch()
                         
@@ -425,8 +449,10 @@ class TRSAInstaller:
                         else:
                             self.ui.print_error(downgrade_message)
                             self.ui.print_warning("Continuing with current PyTorch version...")
+                    # Если пользователь выбрал "2", продолжаем с текущей версией
                 
                 elif status == 'missing':
+                    # PyTorch отсутствует - устанавливаем без запроса
                     print(f"\nInstalling PyTorch {Config.TARGET_PYTORCH_VERSION}...")
                     install_success, install_message = self.engine.install_pytorch()
                     
@@ -472,8 +498,8 @@ def main():
     installer = None
     
     try:
-        print("🔄 Initializing TRSA ComfyUI Accelerator in bat context...")
-        print("🔄 Инициализация TRSA ComfyUI Accelerator в bat-контексте...")
+        print("Initializing TRSA ComfyUI Accelerator in bat context...")
+        print("Инициализация TRSA ComfyUI Accelerator в bat-контексте...")
         print()
         
         installer = TRSAInstaller()
@@ -481,7 +507,7 @@ def main():
         
     except KeyboardInterrupt:
         message = "Installation cancelled by user / Установка отменена пользователем"
-        print(f"\n👋 {message}")
+        print(f"\n{message}")
         
     except Exception as e:
         print(f"❌ Critical error / Критическая ошибка: {e}")
@@ -491,8 +517,8 @@ def main():
             installer.ui.wait_for_exit()
         
         # В bat-контексте не делаем input(), bat-файл сам сделает pause
-        print("\n🔄 Returning control to bat script...")
-        print("🔄 Возврат управления bat-скрипту...")
+        print("\nReturning control to bat script...")
+        print("Возврат управления bat-скрипту...")
 
 
 if __name__ == "__main__":
