@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-TRSA ComfyUI Accelerator v5.1 - Main Application Logic
-Основная логика установки и управления зависимостями
+TRSA ComfyUI Accelerator v5.1 - Main Logic (Temporary Module)
+Основная логика установки для bat-контекста с модульной архитектурой
 """
 import subprocess
 import urllib.request
@@ -10,47 +10,125 @@ import zipfile
 import sys
 import os
 import warnings
+import importlib.util
 from pathlib import Path
-from typing import Tuple, Optional, Literal
-from config import Config
-from ui import LocalizationManager, UserInterface
+from typing import Tuple, Optional, Literal, List
 
+# === АДАПТИРОВАННЫЙ ИМПОРТ ДЛЯ BAT-КОНТЕКСТА ===
+
+def import_temp_module(module_name: str, file_name: str):
+    """
+    Безопасный импорт временных модулей в bat-контексте
+    
+    Args:
+        module_name: имя модуля для импорта
+        file_name: имя файла модуля
+        
+    Returns:
+        Импортированный модуль или None
+    """
+    try:
+        # Попытка импорта как временного модуля
+        if file_name in sys.modules:
+            return sys.modules[file_name]
+        
+        if os.path.exists(file_name):
+            spec = importlib.util.spec_from_file_location(module_name, file_name)
+            if spec and spec.loader:
+                module = importlib.util.module_from_spec(spec)
+                sys.modules[file_name] = module
+                spec.loader.exec_module(module)
+                return module
+        
+        # Fallback - прямой импорт
+        return __import__(module_name)
+        
+    except Exception as e:
+        print(f"Warning: Failed to import {module_name}: {e}")
+        return None
+
+# Импортируем модули с обработкой bat-контекста
+config_module = import_temp_module('config', 'temp_config.py')
+ui_module = import_temp_module('ui', 'temp_ui.py')
+
+if config_module:
+    Config = config_module.Config
+else:
+    # Минимальная конфигурация для fallback
+    class Config:
+        APP_VERSION = "5.1"
+        MIN_PYTHON_VERSION = "3.12"
+        TARGET_PYTORCH_VERSION = "2.7.1"
+        MAX_PYTORCH_VERSION = "2.7.9"
+        PYTORCH_INSTALL_URL = "https://download.pytorch.org/whl/cu128"
+        SAGEATTENTION_WHEEL_URL = "https://github.com/freyandere/TRSA-Comfyui_installer/raw/main/sageattention-2.2.0%2Bcu128torch2.7.1.post1-cp39-abi3-win_amd64.whl"
+        INCLUDE_LIBS_URL = "https://github.com/freyandere/TRSA-Comfyui_installer/raw/main/python_3.12.7_include_libs.zip"
+        SAGEATTENTION_WHEEL_FILE = "sageattention-2.2.0+cu128torch2.7.1.post1-cp39-abi3-win_amd64.whl"
+        INCLUDE_LIBS_FILE = "include_libs.zip"
+        COMMAND_TIMEOUT_DEFAULT = 300
+        PYTORCH_INSTALL_TIMEOUT = 900
+        
+        @classmethod
+        def get_python_executables(cls) -> List[str]:
+            return ["./python.exe", "python.exe", "python"]
+        
+        @classmethod
+        def get_pytorch_packages(cls) -> List[str]:
+            return [f"torch=={cls.TARGET_PYTORCH_VERSION}", "torchvision", "torchaudio"]
+        
+        @classmethod
+        def get_pytorch_install_args(cls) -> List[str]:
+            return ["--force-reinstall", "--index-url", cls.PYTORCH_INSTALL_URL]
+
+if ui_module:
+    LocalizationManager = ui_module.LocalizationManager
+    UserInterface = ui_module.UserInterface
+else:
+    # Минимальная UI для fallback
+    class LocalizationManager:
+        def __init__(self):
+            self.language = 'en'
+        def get_message(self, key: str, **kwargs) -> str:
+            return key
+        def ask_language_choice(self) -> str:
+            return 'en'
+    
+    class UserInterface:
+        def __init__(self, loc):
+            self.loc = loc
+        def print_header(self): print("TRSA ComfyUI Accelerator")
+        def print_step(self, step, total, key): print(f"{step}/{total} {key}")
+        def print_success(self, msg): print(f"✅ {msg}")
+        def print_error(self, msg): print(f"❌ {msg}")
+        def print_warning(self, msg): print(f"⚠️ {msg}")
+        def ask_pytorch_action(self, version, action): return True
+        def print_final_result(self, success): print("Installation completed")
+        def wait_for_exit(self): pass
+
+
+# === ОСНОВНЫЕ КЛАССЫ ЛОГИКИ ===
 
 class VersionManager:
     """Менеджер сравнения и управления версиями"""
     
     @staticmethod
     def compare_versions(version1: str, version2: str) -> int:
-        """
-        Интеллектуальное сравнение версий PyTorch
-        
-        Args:
-            version1: первая версия для сравнения
-            version2: вторая версия для сравнения
-            
-        Returns:
-            -1 если version1 < version2
-             0 если версии равны
-             1 если version1 > version2
-        """
+        """Интеллектуальное сравнение версий PyTorch"""
         def clean_version(version: str) -> list:
-            """Очистка версии от суффиксов и преобразование в список чисел"""
             try:
-                clean_str = version.split('+')[0]  # Убираем +cu128 и подобные
+                clean_str = version.split('+')[0]
                 return [int(x) for x in clean_str.split('.')]
             except (ValueError, AttributeError):
-                return [0]  # Fallback для некорректных версий
+                return [0]
         
         try:
             v1_parts = clean_version(version1)
             v2_parts = clean_version(version2)
             
-            # Выравниваем длину массивов нулями
             max_len = max(len(v1_parts), len(v2_parts))
             v1_parts.extend([0] * (max_len - len(v1_parts)))
             v2_parts.extend([0] * (max_len - len(v2_parts)))
             
-            # Сравниваем по частям
             for i in range(max_len):
                 if v1_parts[i] < v2_parts[i]:
                     return -1
@@ -60,20 +138,11 @@ class VersionManager:
             return 0
             
         except Exception:
-            # Fallback на строковое сравнение
             return -1 if version1 < version2 else (1 if version1 > version2 else 0)
     
     @classmethod
     def get_pytorch_status(cls, current_version: str) -> Literal['too_old', 'compatible', 'too_new']:
-        """
-        Определение статуса версии PyTorch
-        
-        Args:
-            current_version: текущая версия PyTorch
-            
-        Returns:
-            Статус совместимости версии
-        """
+        """Определение статуса версии PyTorch"""
         min_compare = cls.compare_versions(current_version, Config.TARGET_PYTORCH_VERSION)
         max_compare = cls.compare_versions(current_version, Config.MAX_PYTORCH_VERSION)
         
@@ -86,39 +155,22 @@ class VersionManager:
 
 
 class SystemManager:
-    """Менеджер системных операций и команд"""
+    """Менеджер системных операций для bat-контекста"""
     
     def __init__(self, localization: LocalizationManager):
         self.loc = localization
         self.python_exe = self._find_python_executable()
     
     def _find_python_executable(self) -> str:
-        """
-        Поиск исполняемого файла Python
-        
-        Returns:
-            Путь к Python исполняемому файлу
-            
-        Raises:
-            FileNotFoundError: если Python не найден
-        """
+        """Поиск исполняемого файла Python с приоритетом для bat-контекста"""
         for exe in Config.get_python_executables():
             if os.path.exists(exe):
                 return exe
         
-        raise FileNotFoundError(self.loc.get_message('python_not_found'))
+        raise FileNotFoundError("Python executable not found")
     
     def run_command(self, cmd: list, timeout: int = None) -> Tuple[bool, str]:
-        """
-        Выполнение системной команды с обработкой ошибок
-        
-        Args:
-            cmd: команда для выполнения
-            timeout: таймаут выполнения
-            
-        Returns:
-            Tuple[успешность, вывод команды]
-        """
+        """Выполнение системной команды с обработкой ошибок"""
         if timeout is None:
             timeout = Config.COMMAND_TIMEOUT_DEFAULT
         
@@ -133,21 +185,12 @@ class SystemManager:
             return result.returncode == 0, result.stdout + result.stderr
             
         except subprocess.TimeoutExpired:
-            return False, self.loc.get_message('command_timeout')
+            return False, "Command timeout"
         except Exception as e:
             return False, str(e)
     
     def download_file(self, url: str, filename: str) -> bool:
-        """
-        Безопасное скачивание файла
-        
-        Args:
-            url: URL для скачивания
-            filename: имя файла для сохранения
-            
-        Returns:
-            True если скачивание успешно
-        """
+        """Безопасное скачивание файла"""
         try:
             urllib.request.urlretrieve(url, filename)
             return os.path.exists(filename) and os.path.getsize(filename) > 1000
@@ -156,7 +199,7 @@ class SystemManager:
 
 
 class InstallationEngine:
-    """Основной движок установки компонентов"""
+    """Основной движок установки компонентов для bat-контекста"""
     
     def __init__(self, system_manager: SystemManager, ui: UserInterface):
         self.system = system_manager
@@ -167,19 +210,14 @@ class InstallationEngine:
         warnings.filterwarnings("ignore", category=DeprecationWarning)
     
     def check_python_version(self) -> Tuple[bool, str]:
-        """
-        Проверка версии Python
-        
-        Returns:
-            Tuple[совместимость, сообщение о статусе]
-        """
+        """Проверка версии Python"""
         success, output = self.system.run_command([
             self.system.python_exe, "-c", 
             "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
         ])
         
         if not success:
-            return False, self.loc.get_message('python_detect_error')
+            return False, "Cannot detect Python version"
         
         try:
             python_version = float(output.strip())
@@ -188,28 +226,19 @@ class InstallationEngine:
             if python_version >= min_version:
                 return True, f"Python {python_version} - OK"
             else:
-                return False, self.loc.get_message(
-                    'python_too_old',
-                    version=python_version,
-                    min_version=Config.MIN_PYTHON_VERSION
-                )
+                return False, f"Python {python_version} too old (need {Config.MIN_PYTHON_VERSION}+)"
         except ValueError:
-            return False, self.loc.get_message('python_parse_error', output=output)
+            return False, f"Cannot parse Python version: {output}"
     
     def check_pytorch_version(self) -> Tuple[bool, str, Optional[str], str]:
-        """
-        Проверка версии PyTorch с определением статуса
-        
-        Returns:
-            Tuple[совместимость, сообщение, текущая_версия, статус]
-        """
+        """Проверка версии PyTorch с определением статуса"""
         # Проверяем установлен ли PyTorch
         success, _ = self.system.run_command([
             self.system.python_exe, "-c", "import torch; print('installed')"
         ])
         
         if not success:
-            return False, self.loc.get_message('pytorch_missing'), None, 'missing'
+            return False, "PyTorch not found - installation required", None, 'missing'
         
         # Получаем версию
         success, version_output = self.system.run_command([
@@ -217,7 +246,7 @@ class InstallationEngine:
         ])
         
         if not success:
-            return False, self.loc.get_message('pytorch_detect_error'), None, 'missing'
+            return False, "Cannot detect PyTorch version", None, 'missing'
         
         current_version = version_output.strip()
         
@@ -242,20 +271,12 @@ class InstallationEngine:
             return False, message, current_version, status
     
     def install_pytorch(self, target_version: str = None) -> Tuple[bool, str]:
-        """
-        Установка или переустановка PyTorch
-        
-        Args:
-            target_version: целевая версия (по умолчанию из конфига)
-            
-        Returns:
-            Tuple[успешность, сообщение о результате]
-        """
+        """Установка или переустановка PyTorch"""
         if target_version is None:
             target_version = Config.TARGET_PYTORCH_VERSION
         
-        print(self.loc.get_message('installing_pytorch_cuda', version=target_version))
-        print(self.loc.get_message('download_warning'))
+        print(f"Installing PyTorch {target_version} with CUDA 12.8...")
+        print("This may take several minutes (~2.5GB download)")
         
         # Формируем команду установки
         cmd = [self.system.python_exe, "-m", "pip", "install"]
@@ -272,11 +293,11 @@ class InstallationEngine:
             
             if check_success:
                 new_version = version_output.strip()
-                return True, self.loc.get_message('pytorch_installed_success', version=new_version)
+                return True, f"PyTorch {new_version} installed successfully"
             else:
-                return True, self.loc.get_message('pytorch_installed_no_check')
+                return True, "PyTorch installed (version check failed)"
         else:
-            return False, self.loc.get_message('pytorch_install_failed', error=output[:300])
+            return False, f"PyTorch installation failed: {output[:300]}"
     
     def upgrade_pip(self) -> Tuple[bool, str]:
         """Обновление pip до последней версии"""
@@ -285,9 +306,9 @@ class InstallationEngine:
         ])
         
         if success:
-            return True, self.loc.get_message('pip_upgraded')
+            return True, "pip upgraded successfully"
         else:
-            return False, self.loc.get_message('pip_upgrade_failed', error=output[:200])
+            return False, f"pip upgrade failed: {output[:200]}"
     
     def install_triton(self) -> Tuple[bool, str]:
         """Установка Triton Windows"""
@@ -296,41 +317,41 @@ class InstallationEngine:
         ])
         
         if success:
-            return True, self.loc.get_message('triton_installed')
+            return True, "Triton installed"
         else:
-            return False, self.loc.get_message('triton_failed', error=output[:200])
+            return False, f"Triton failed: {output[:200]}"
     
     def install_sageattention(self) -> Tuple[bool, str]:
         """Установка SageAttention из wheel файла"""
         # Скачивание wheel файла
         if not self.system.download_file(Config.SAGEATTENTION_WHEEL_URL, Config.SAGEATTENTION_WHEEL_FILE):
-            return False, self.loc.get_message('sage_download_failed')
+            return False, "Failed to download SageAttention wheel"
         
         # Установка из wheel
         success, output = self.system.run_command([
             self.system.python_exe, "-m", "pip", "install", Config.SAGEATTENTION_WHEEL_FILE
         ])
         
-        # Очистка временного файла
+        # Очистка временного файла (bat-скрипт также удалит)
         try:
             os.remove(Config.SAGEATTENTION_WHEEL_FILE)
         except:
             pass
         
         if success:
-            return True, self.loc.get_message('sage_installed')
+            return True, "SageAttention installed"
         else:
-            return False, self.loc.get_message('sage_failed', error=output[:200])
+            return False, f"SageAttention failed: {output[:200]}"
     
     def setup_include_libs(self) -> Tuple[bool, str]:
         """Скачивание и настройка папок include/libs"""
         # Проверяем существование папок
         if os.path.exists("include") and os.path.exists("libs"):
-            return True, self.loc.get_message('libs_exist')
+            return True, "include/libs folders already exist"
         
         # Скачивание архива
         if not self.system.download_file(Config.INCLUDE_LIBS_URL, Config.INCLUDE_LIBS_FILE):
-            return False, self.loc.get_message('libs_download_failed')
+            return False, "Failed to download include/libs archive"
         
         # Распаковка
         try:
@@ -340,16 +361,16 @@ class InstallationEngine:
             
             # Проверяем результат
             if os.path.exists("include") and os.path.exists("libs"):
-                return True, self.loc.get_message('libs_created')
+                return True, "include/libs folders created"
             else:
-                return False, self.loc.get_message('libs_extract_no_folders')
+                return False, "Extraction completed but folders not found"
                 
         except Exception as e:
-            return False, self.loc.get_message('libs_extract_failed', error=str(e))
+            return False, f"Extraction failed: {str(e)}"
 
 
 class TRSAInstaller:
-    """Главный класс приложения TRSA ComfyUI Accelerator"""
+    """Главный класс приложения для bat-контекста"""
     
     def __init__(self):
         self.localization = LocalizationManager()
@@ -358,12 +379,7 @@ class TRSAInstaller:
         self.engine = InstallationEngine(self.system, self.ui)
     
     def run_installation(self) -> bool:
-        """
-        Запуск полного процесса установки
-        
-        Returns:
-            True если установка прошла успешно
-        """
+        """Запуск полного процесса установки"""
         try:
             # Выбор языка
             self.localization.ask_language_choice()
@@ -390,28 +406,28 @@ class TRSAInstaller:
                 
                 if status == 'too_old':
                     if self.ui.ask_pytorch_action(current_version, 'update'):
-                        print(f"\n{self.localization.get_message('installing_pytorch', version=Config.TARGET_PYTORCH_VERSION)}...")
+                        print(f"\nInstalling PyTorch {Config.TARGET_PYTORCH_VERSION}...")
                         install_success, install_message = self.engine.install_pytorch()
                         
                         if install_success:
                             self.ui.print_success(install_message)
                         else:
                             self.ui.print_error(install_message)
-                            self.ui.print_warning(self.localization.get_message('continuing_current_pytorch'))
+                            self.ui.print_warning("Continuing with current PyTorch version...")
                 
                 elif status == 'too_new':
                     if self.ui.ask_pytorch_action(current_version, 'downgrade'):
-                        print(f"\n{self.localization.get_message('downgrading_pytorch', version=Config.TARGET_PYTORCH_VERSION)}...")
+                        print(f"\nDowngrading PyTorch to version {Config.TARGET_PYTORCH_VERSION}...")
                         downgrade_success, downgrade_message = self.engine.install_pytorch()
                         
                         if downgrade_success:
                             self.ui.print_success(downgrade_message)
                         else:
                             self.ui.print_error(downgrade_message)
-                            self.ui.print_warning(self.localization.get_message('continuing_current_pytorch'))
+                            self.ui.print_warning("Continuing with current PyTorch version...")
                 
                 elif status == 'missing':
-                    print(f"\n{self.localization.get_message('installing_pytorch', version=Config.TARGET_PYTORCH_VERSION)}...")
+                    print(f"\nInstalling PyTorch {Config.TARGET_PYTORCH_VERSION}...")
                     install_success, install_message = self.engine.install_pytorch()
                     
                     if install_success:
@@ -447,32 +463,36 @@ class TRSAInstaller:
             return all_success
             
         except Exception as e:
-            self.ui.print_error(self.localization.get_message('critical_error', error=str(e)))
+            self.ui.print_error(f"Critical error: {str(e)}")
             return False
 
 
 def main():
-    """Точка входа в приложение"""
+    """Точка входа в приложение для bat-контекста"""
     installer = None
     
     try:
+        print("🔄 Initializing TRSA ComfyUI Accelerator in bat context...")
+        print("🔄 Инициализация TRSA ComfyUI Accelerator в bat-контексте...")
+        print()
+        
         installer = TRSAInstaller()
         installer.run_installation()
         
     except KeyboardInterrupt:
-        message = installer.localization.get_message('installation_cancelled') if installer else 'Installation cancelled by user'
+        message = "Installation cancelled by user / Установка отменена пользователем"
         print(f"\n👋 {message}")
         
     except Exception as e:
-        error_message = installer.localization.get_message('critical_error', error=str(e)) if installer else f"Critical error: {e}"
-        print(f"❌ {error_message}")
+        print(f"❌ Critical error / Критическая ошибка: {e}")
         
     finally:
         if installer:
             installer.ui.wait_for_exit()
-        else:
-            print("\nPress Enter to exit... / Нажмите Enter для выхода...")
-            input()
+        
+        # В bat-контексте не делаем input(), bat-файл сам сделает pause
+        print("\n🔄 Returning control to bat script...")
+        print("🔄 Возврат управления bat-скрипту...")
 
 
 if __name__ == "__main__":
