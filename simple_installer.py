@@ -365,7 +365,7 @@ class EnhancedSimpleInstaller:
         
         success, output = self._run_command([
             self.python_exe, "-m", "pip", "install", 
-            "torch", "torchvision", "torchaudio", 
+            "torch==2.7.1", "torchvision", "torchaudio", 
             "--force-reinstall",
             "--index-url", self.PYTORCH_INSTALL_URL
         ], timeout=900)  # 15 минут таймаут для больших загрузок
