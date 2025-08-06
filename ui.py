@@ -114,7 +114,7 @@ class LocalizationManager:
         }
     
     def _get_russian_messages(self) -> Dict[str, str]:
-        """Русские сообщения (полная версия)"""
+        """Русские сообщения (только ✅❌)"""
         return {
             # Заголовки и основной интерфейс
             'app_title': f'TRSA ComfyUI Accelerator v{Config.APP_VERSION} - Умная установка',
@@ -137,7 +137,7 @@ class LocalizationManager:
             'pytorch_outdated': 'PyTorch устарел - рекомендуется обновление',
             'pytorch_too_new': 'PyTorch слишком новый - рекомендуется даунгрейд',
             
-            # Предупреждения
+            # Предупреждения (БЕЗ эмодзи)
             'warning_old_version': 'ВНИМАНИЕ: Старая версия может вызвать ошибки!',
             'warning_new_version': 'ВНИМАНИЕ: Более новая версия может вызвать проблемы совместимости!',
             'compatibility_warning_old': 'Предупреждение: Могут возникнуть проблемы совместимости!',
@@ -205,7 +205,7 @@ class LocalizationManager:
         }
     
     def _get_english_messages(self) -> Dict[str, str]:
-        """English messages (полная версия)"""
+        """English messages (только ✅❌)"""
         return {
             # Headers and main interface
             'app_title': f'TRSA ComfyUI Accelerator v{Config.APP_VERSION} - Smart Installation',
@@ -228,7 +228,7 @@ class LocalizationManager:
             'pytorch_outdated': 'PyTorch is outdated - update recommended',
             'pytorch_too_new': 'PyTorch is too new - downgrade recommended',
             
-            # Warnings
+            # Warnings (БЕЗ эмодзи)
             'warning_old_version': 'WARNING: Old version may cause errors!',
             'warning_new_version': 'WARNING: Newer version may cause compatibility issues!',
             'compatibility_warning_old': 'Warning: You may encounter compatibility issues!',
@@ -358,7 +358,7 @@ class UserInterface:
         print(self.loc.get_message('separator'))
         
         if self._is_bat_context:
-            print(f"🔄 {self.loc.get_message('bat_context_detected')}")
+            print(f"{self.loc.get_message('bat_context_detected')}")
             print()
     
     def print_step(self, step: int, total: int, message_key: str) -> None:
@@ -375,10 +375,19 @@ class UserInterface:
     
     def print_warning(self, message: str) -> None:
         """Вывод предупреждения"""
-        print(f"⚠️ {message}")
+        print(f"WARNING: {message}")
     
     def ask_pytorch_action(self, current_version: str, action_type: str) -> bool:
-        """Запрос действия пользователя относительно PyTorch"""
+        """
+        ИСПРАВЛЕНО: Корректный запрос действия пользователя относительно PyTorch
+        
+        Args:
+            current_version: текущая версия PyTorch
+            action_type: тип действия ('update' или 'downgrade')
+            
+        Returns:
+            True если пользователь согласен на действие, False если хочет продолжить с текущей версией
+        """
         # Определяем тип предупреждения и выбора
         if action_type == 'update':
             warning_key = 'warning_old_version'
@@ -402,22 +411,27 @@ class UserInterface:
         print(f"{self.loc.get_message('sage_requirement', target=Config.TARGET_PYTORCH_VERSION)}")
         print()
         
-        # Запрашиваем выбор
+        # ИСПРАВЛЕНО: Корректный интерактивный запрос
         while True:
-            if action_type == 'update':
-                choice = input(self.loc.get_message(choice_key)).strip()
-            else:
-                choice = input(self.loc.get_message(choice_key, target=Config.TARGET_PYTORCH_VERSION)).strip()
-            
-            if choice == '1':
-                return True
-            elif choice == '2':
-                print(f"\n{self.loc.get_message('continuing_with_version', version=current_version)}")
-                print(f"{self.loc.get_message(compatibility_key)}")
-                print(f"{self.loc.get_message(advice_key)}")
+            try:
+                if action_type == 'update':
+                    choice = input(self.loc.get_message(choice_key)).strip()
+                else:
+                    choice = input(self.loc.get_message(choice_key, target=Config.TARGET_PYTORCH_VERSION)).strip()
+                
+                if choice == '1':
+                    return True  # Пользователь хочет обновить/откатить
+                elif choice == '2':
+                    print(f"\n{self.loc.get_message('continuing_with_version', version=current_version)}")
+                    print(f"{self.loc.get_message(compatibility_key)}")
+                    print(f"{self.loc.get_message(advice_key)}")
+                    return False  # Пользователь хочет продолжить с текущей версией
+                else:
+                    self.print_error(self.loc.get_message('invalid_choice'))
+                    
+            except (EOFError, KeyboardInterrupt):
+                print(f"\n{self.loc.get_message('installation_cancelled')}")
                 return False
-            else:
-                self.print_error(self.loc.get_message('invalid_choice'))
     
     def print_final_result(self, success: bool) -> None:
         """Вывод финального результата установки"""
@@ -427,10 +441,10 @@ class UserInterface:
             self.print_success(self.loc.get_message('installation_success'))
             print(self.loc.get_message('restart_note'))
         else:
-            self.print_warning(self.loc.get_message('installation_partial'))
+            print(f"WARNING: {self.loc.get_message('installation_partial')}")
         
         if self._is_bat_context:
-            print(f"\n🧹 Временные файлы будут удалены bat-скриптом")
+            print(f"\nВременные файлы будут удалены bat-скриптом")
     
     def wait_for_exit(self) -> None:
         """Ожидание нажатия Enter для выхода (адаптировано для bat)"""
