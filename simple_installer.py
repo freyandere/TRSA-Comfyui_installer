@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-TRSA ComfyUI Accelerator v5.0 - Полностью локализованная версия
+TRSA ComfyUI Accelerator v5.1 - С поддержкой даунгрейда PyTorch
 """
 import subprocess
 import urllib.request
@@ -10,17 +10,18 @@ import sys
 import os
 import warnings
 from pathlib import Path
-from typing import Tuple, Dict, Optional
+from typing import Tuple, Dict, Optional, Literal
 
 
 class EnhancedSimpleInstaller:
     """
-    TRSA ComfyUI Accelerator с полной двуязычной поддержкой
+    TRSA ComfyUI Accelerator с полной двуязычной поддержкой и контролем версий PyTorch
     """
     
     # Константы для версий
     MIN_PYTHON_VERSION = "3.12"
-    MIN_PYTORCH_VERSION = "2.7.1"
+    TARGET_PYTORCH_VERSION = "2.7.1"  # Целевая версия
+    MAX_PYTORCH_VERSION = "2.7.9"     # Максимальная совместимая версия
     PYTORCH_INSTALL_URL = "https://download.pytorch.org/whl/cu128"
     
     def __init__(self):
@@ -81,21 +82,22 @@ class EnhancedSimpleInstaller:
         return 'en'
     
     def _load_messages(self) -> Dict[str, Dict[str, str]]:
-        """Загрузка ВСЕХ сообщений для двух языков"""
+        """Загрузка ВСЕХ сообщений для двух языков с поддержкой даунгрейда"""
         return {
             'ru': {
                 # Основные сообщения интерфейса
-                'header': 'TRSA ComfyUI Accelerator v5.0 - Умная установка',
+                'header': 'TRSA ComfyUI Accelerator v5.1 - Умная установка',
                 'lang_choice': 'Выберите язык / Choose language: 1-English, 2-Русский: ',
                 'checking_python': 'Проверка версии Python',
                 'checking_pytorch': 'Проверка версии PyTorch',
-                'pytorch_ok': 'PyTorch версия актуальна',
+                'pytorch_ok': 'PyTorch версия совместима',
                 'pytorch_missing': 'PyTorch не найден - требуется установка',
                 'pytorch_outdated': 'PyTorch устарел - рекомендуется обновление',
-                'pytorch_update_prompt': 'Обновить PyTorch до версии 2.7.1?',
-                'pytorch_warning': 'ВНИМАНИЕ: Старая версия может вызвать ошибки!',
-                'pytorch_installing': 'Установка PyTorch 2.7.1',
+                'pytorch_too_new': 'PyTorch слишком новый - рекомендуется даунгрейд',
+                'pytorch_installing': 'Установка PyTorch {version}',
+                'pytorch_downgrading': 'Даунгрейд PyTorch до версии {version}',
                 'pytorch_choice': '1-Обновить PyTorch, 2-Продолжить с текущей версией: ',
+                'pytorch_downgrade_choice': '1-Откатиться до PyTorch {target}, 2-Продолжить с текущей версией: ',
                 'upgrading_pip': 'Обновление pip',
                 'installing_triton': 'Установка Triton',
                 'installing_sage': 'Установка SageAttention',
@@ -105,14 +107,21 @@ class EnhancedSimpleInstaller:
                 'some_failed': 'Некоторые компоненты не установились',
                 'press_enter': 'Нажмите Enter для выхода...',
                 
-                # Дополнительные сообщения для полной локализации
+                # Сообщения о версиях PyTorch
                 'current_version': 'Текущая версия',
-                'required_version': 'Требуемая версия',
-                'sage_requirement': 'SageAttention2 требует PyTorch {version}+ для оптимальной производительности',
+                'target_version': 'Рекомендуемая версия',
+                'compatible_range': 'Совместимый диапазон',
+                'sage_requirement': 'SageAttention2 требует PyTorch {target} для оптимальной производительности',
+                'version_too_new_warning': 'ВНИМАНИЕ: Более новая версия может вызвать проблемы совместимости!',
+                'version_too_old_warning': 'ВНИМАНИЕ: Старая версия может вызвать ошибки!',
                 'continuing_with_version': 'Продолжаем с PyTorch {version}',
-                'compatibility_warning': 'Предупреждение: Могут возникнуть проблемы совместимости!',
+                'compatibility_warning_new': 'Предупреждение: Новая версия может быть несовместима с SageAttention2!',
+                'compatibility_warning_old': 'Предупреждение: Могут возникнуть проблемы совместимости!',
                 'consider_updating': 'Рассмотрите возможность обновления PyTorch позже при возникновении проблем',
+                'consider_downgrading': 'Рассмотрите возможность отката PyTorch при возникновении проблем',
                 'invalid_choice': 'Пожалуйста, введите 1 или 2',
+                
+                # Сообщения об установке
                 'installing_pytorch_cuda': 'Установка PyTorch {version} с CUDA 12.8...',
                 'download_time_warning': 'Это может занять несколько минут (~2.5GB загрузка)',
                 'pytorch_installed_success': 'PyTorch {version} установлен успешно',
@@ -151,17 +160,18 @@ class EnhancedSimpleInstaller:
             },
             'en': {
                 # Основные сообщения интерфейса
-                'header': 'TRSA ComfyUI Accelerator v5.0 - Smart Installation',
+                'header': 'TRSA ComfyUI Accelerator v5.1 - Smart Installation',
                 'lang_choice': 'Choose language / Выберите язык: 1-English, 2-Русский: ',
                 'checking_python': 'Checking Python version',
                 'checking_pytorch': 'Checking PyTorch version',
-                'pytorch_ok': 'PyTorch version is up-to-date',
+                'pytorch_ok': 'PyTorch version is compatible',
                 'pytorch_missing': 'PyTorch not found - installation required',
                 'pytorch_outdated': 'PyTorch is outdated - update recommended',
-                'pytorch_update_prompt': 'Update PyTorch to version 2.7.1?',
-                'pytorch_warning': 'WARNING: Old version may cause errors!',
-                'pytorch_installing': 'Installing PyTorch 2.7.1',
+                'pytorch_too_new': 'PyTorch is too new - downgrade recommended',
+                'pytorch_installing': 'Installing PyTorch {version}',
+                'pytorch_downgrading': 'Downgrading PyTorch to version {version}',
                 'pytorch_choice': '1-Update PyTorch, 2-Continue with current version: ',
+                'pytorch_downgrade_choice': '1-Downgrade to PyTorch {target}, 2-Continue with current version: ',
                 'upgrading_pip': 'Upgrading pip',
                 'installing_triton': 'Installing Triton',
                 'installing_sage': 'Installing SageAttention',
@@ -171,14 +181,21 @@ class EnhancedSimpleInstaller:
                 'some_failed': 'Some components failed to install',
                 'press_enter': 'Press Enter to exit...',
                 
-                # Дополнительные сообщения для полной локализации
+                # Сообщения о версиях PyTorch
                 'current_version': 'Current version',
-                'required_version': 'Required version',
-                'sage_requirement': 'SageAttention2 requires PyTorch {version}+ for optimal performance',
+                'target_version': 'Recommended version',
+                'compatible_range': 'Compatible range',
+                'sage_requirement': 'SageAttention2 requires PyTorch {target} for optimal performance',
+                'version_too_new_warning': 'WARNING: Newer version may cause compatibility issues!',
+                'version_too_old_warning': 'WARNING: Old version may cause errors!',
                 'continuing_with_version': 'Continuing with PyTorch {version}',
-                'compatibility_warning': 'Warning: You may encounter compatibility issues!',
+                'compatibility_warning_new': 'Warning: Newer version may be incompatible with SageAttention2!',
+                'compatibility_warning_old': 'Warning: You may encounter compatibility issues!',
                 'consider_updating': 'Consider updating PyTorch later if problems occur',
+                'consider_downgrading': 'Consider downgrading PyTorch if problems occur',
                 'invalid_choice': 'Please enter 1 or 2',
+                
+                # Сообщения об установке
                 'installing_pytorch_cuda': 'Installing PyTorch {version} with CUDA 12.8...',
                 'download_time_warning': 'This may take several minutes (~2.5GB download)',
                 'pytorch_installed_success': 'PyTorch {version} installed successfully',
@@ -252,6 +269,39 @@ class EnhancedSimpleInstaller:
         except Exception:
             return False
     
+    def _compare_versions(self, version1: str, version2: str) -> int:
+        """
+        Сравнение версий PyTorch
+        Returns: -1 если version1 < version2, 0 если равны, 1 если version1 > version2
+        """
+        def clean_version(version: str) -> list:
+            """Очистка версии от суффиксов типа +cu128"""
+            return [int(x) for x in version.split('+')[0].split('.')]
+        
+        try:
+            v1_parts = clean_version(version1)
+            v2_parts = clean_version(version2)
+            
+            # Дополняем до одинаковой длины нулями
+            max_len = max(len(v1_parts), len(v2_parts))
+            v1_parts.extend([0] * (max_len - len(v1_parts)))
+            v2_parts.extend([0] * (max_len - len(v2_parts)))
+            
+            for i in range(max_len):
+                if v1_parts[i] < v2_parts[i]:
+                    return -1
+                elif v1_parts[i] > v2_parts[i]:
+                    return 1
+            
+            return 0
+        except Exception:
+            # Fallback на строковое сравнение
+            if version1 < version2:
+                return -1
+            elif version1 > version2:
+                return 1
+            return 0
+    
     def check_python_version(self) -> Tuple[bool, str]:
         """Проверка версии Python (требуется 3.12+)"""
         success, output = self._run_command([
@@ -272,10 +322,11 @@ class EnhancedSimpleInstaller:
                 return False, self.msg('python_version_parse_error', output=output)
         return False, self.msg('python_version_detect_error')
     
-    def check_pytorch_version(self) -> Tuple[bool, str, Optional[str]]:
+    def check_pytorch_version(self) -> Tuple[bool, str, Optional[str], str]:
         """
-        Проверка версии PyTorch
-        Returns: (pytorch_installed, message, current_version)
+        Проверка версии PyTorch с определением статуса совместимости
+        Returns: (is_compatible, message, current_version, status)
+        status: 'missing', 'too_old', 'compatible', 'too_new'
         """
         # Проверяем наличие PyTorch
         success, output = self._run_command([
@@ -283,7 +334,7 @@ class EnhancedSimpleInstaller:
         ])
         
         if not success:
-            return False, self.msg('pytorch_missing'), None
+            return False, self.msg('pytorch_missing'), None, 'missing'
         
         # Получаем версию PyTorch
         success, version_output = self._run_command([
@@ -291,7 +342,7 @@ class EnhancedSimpleInstaller:
         ])
         
         if not success:
-            return False, self.msg('pytorch_version_detect_error'), None
+            return False, self.msg('pytorch_version_detect_error'), None, 'missing'
         
         current_version = version_output.strip()
         
@@ -302,47 +353,28 @@ class EnhancedSimpleInstaller:
         cuda_available = cuda_output.strip() == "True" if success else False
         
         # Сравниваем версии
-        try:
-            # Пытаемся использовать packaging для сравнения версий
-            success, _ = self._run_command([
-                self.python_exe, "-c", 
-                f"from packaging import version; "
-                f"exit(0 if version.parse('{current_version}') >= version.parse('{self.MIN_PYTORCH_VERSION}') else 1)"
-            ])
-            
-            if success:
-                status_msg = f"PyTorch {current_version} - OK, CUDA: {cuda_available}"
-                return True, status_msg, current_version
-            else:
-                status_msg = f"PyTorch {current_version} outdated (need {self.MIN_PYTORCH_VERSION}+), CUDA: {cuda_available}"
-                return False, status_msg, current_version
-                
-        except Exception:
-            # Fallback: простое сравнение версий
-            try:
-                current_parts = current_version.split('.')
-                min_parts = self.MIN_PYTORCH_VERSION.split('.')
-                
-                for i in range(min(len(current_parts), len(min_parts))):
-                    current_part = int(current_parts[i].split('+')[0])  # Убираем +cu128 если есть
-                    min_part = int(min_parts[i])
-                    
-                    if current_part > min_part:
-                        return True, f"PyTorch {current_version} - OK", current_version
-                    elif current_part < min_part:
-                        return False, f"PyTorch {current_version} outdated", current_version
-                
-                return True, f"PyTorch {current_version} - OK", current_version
-                
-            except Exception:
-                return False, self.msg('pytorch_version_check_failed', version=current_version), current_version
+        min_compare = self._compare_versions(current_version, self.TARGET_PYTORCH_VERSION)
+        max_compare = self._compare_versions(current_version, self.MAX_PYTORCH_VERSION)
+        
+        if min_compare < 0:
+            # Версия слишком старая
+            status_msg = f"PyTorch {current_version} outdated (need {self.TARGET_PYTORCH_VERSION}+), CUDA: {cuda_available}"
+            return False, status_msg, current_version, 'too_old'
+        elif max_compare > 0:
+            # Версия слишком новая
+            status_msg = f"PyTorch {current_version} too new (recommended {self.TARGET_PYTORCH_VERSION}-{self.MAX_PYTORCH_VERSION}), CUDA: {cuda_available}"
+            return False, status_msg, current_version, 'too_new'
+        else:
+            # Версия совместима
+            status_msg = f"PyTorch {current_version} - Compatible, CUDA: {cuda_available}"
+            return True, status_msg, current_version, 'compatible'
     
     def ask_pytorch_update(self, current_version: str) -> bool:
         """Запрос пользователя об обновлении PyTorch"""
-        print(f"\n{self.msg('pytorch_warning')}")
+        print(f"\n{self.msg('version_too_old_warning')}")
         print(f"{self.msg('current_version')}: {current_version}")
-        print(f"{self.msg('required_version')}: {self.MIN_PYTORCH_VERSION}+")
-        print(f"{self.msg('sage_requirement', version=self.MIN_PYTORCH_VERSION)}")
+        print(f"{self.msg('target_version')}: {self.TARGET_PYTORCH_VERSION}")
+        print(f"{self.msg('sage_requirement', target=self.TARGET_PYTORCH_VERSION)}")
         print()
         
         while True:
@@ -352,20 +384,51 @@ class EnhancedSimpleInstaller:
                 return True
             elif choice == '2':
                 print(f"\n{self.msg('continuing_with_version', version=current_version)}")
-                print(f"{self.msg('compatibility_warning')}")
+                print(f"{self.msg('compatibility_warning_old')}")
                 print(f"{self.msg('consider_updating')}")
                 return False
             else:
                 print(f"❌ {self.msg('invalid_choice')}")
     
-    def install_pytorch(self) -> Tuple[bool, str]:
-        """Установка PyTorch 2.7.1 с CUDA 12.8"""
-        print(f"{self.msg('installing_pytorch_cuda', version=self.MIN_PYTORCH_VERSION)}")
+    def ask_pytorch_downgrade(self, current_version: str) -> bool:
+        """Запрос пользователя о даунгрейде PyTorch"""
+        print(f"\n{self.msg('version_too_new_warning')}")
+        print(f"{self.msg('current_version')}: {current_version}")
+        print(f"{self.msg('target_version')}: {self.TARGET_PYTORCH_VERSION}")
+        print(f"{self.msg('compatible_range')}: {self.TARGET_PYTORCH_VERSION} - {self.MAX_PYTORCH_VERSION}")
+        print(f"{self.msg('sage_requirement', target=self.TARGET_PYTORCH_VERSION)}")
+        print()
+        
+        while True:
+            choice = input(self.msg('pytorch_downgrade_choice', target=self.TARGET_PYTORCH_VERSION)).strip()
+            
+            if choice == '1':
+                return True
+            elif choice == '2':
+                print(f"\n{self.msg('continuing_with_version', version=current_version)}")
+                print(f"{self.msg('compatibility_warning_new')}")
+                print(f"{self.msg('consider_downgrading')}")
+                return False
+            else:
+                print(f"❌ {self.msg('invalid_choice')}")
+    
+    def install_pytorch(self, target_version: str = None) -> Tuple[bool, str]:
+        """
+        Установка/даунгрейд PyTorch до указанной версии
+        Args:
+            target_version: версия для установки (по умолчанию TARGET_PYTORCH_VERSION)
+        """
+        if target_version is None:
+            target_version = self.TARGET_PYTORCH_VERSION
+            
+        print(f"{self.msg('installing_pytorch_cuda', version=target_version)}")
         print(f"{self.msg('download_time_warning')}")
         
         success, output = self._run_command([
-            self.python_exe, "-m", "pip", "install", 
-            "torch==2.7.1", "torchvision", "torchaudio", 
+            self.python_exe, "-m", "pip", "install",
+            f"torch=={target_version}",
+            "torchvision", 
+            "torchaudio",
             "--force-reinstall",
             "--index-url", self.PYTORCH_INSTALL_URL
         ], timeout=900)  # 15 минут таймаут для больших загрузок
@@ -466,7 +529,7 @@ class EnhancedSimpleInstaller:
             pass  # Оставляем автоопределенный язык
     
     def run_installation(self) -> bool:
-        """Выполнение полной установки с проверкой PyTorch"""
+        """Выполнение полной установки с проверкой PyTorch и поддержкой даунгрейда"""
         # Выбор языка
         self.choose_language()
         
@@ -482,26 +545,38 @@ class EnhancedSimpleInstaller:
             print(f"❌ {message}")
             return False
         
-        # Шаг 2: Проверка PyTorch
+        # Шаг 2: Проверка PyTorch с определением типа проблемы
         print(f"\n2/6 {self.msg('checking_pytorch')}...")
-        pytorch_ok, pytorch_message, current_pytorch = self.check_pytorch_version()
+        pytorch_ok, pytorch_message, current_pytorch, status = self.check_pytorch_version()
         
         if not pytorch_ok:
             print(f"⚠️ {pytorch_message}")
             
-            if current_pytorch:
-                # PyTorch установлен, но устарел
+            if status == 'too_old':
+                # PyTorch слишком старый - предлагаем обновление
                 if self.ask_pytorch_update(current_pytorch):
-                    print(f"\n{self.msg('pytorch_installing')}...")
+                    print(f"\n{self.msg('pytorch_installing', version=self.TARGET_PYTORCH_VERSION)}...")
                     install_success, install_message = self.install_pytorch()
                     if install_success:
                         print(f"✅ {install_message}")
                     else:
                         print(f"❌ {install_message}")
                         print(f"⚠️ {self.msg('continuing_current_pytorch')}")
-            else:
+                        
+            elif status == 'too_new':
+                # PyTorch слишком новый - предлагаем даунгрейд
+                if self.ask_pytorch_downgrade(current_pytorch):
+                    print(f"\n{self.msg('pytorch_downgrading', version=self.TARGET_PYTORCH_VERSION)}...")
+                    downgrade_success, downgrade_message = self.install_pytorch()
+                    if downgrade_success:
+                        print(f"✅ {downgrade_message}")
+                    else:
+                        print(f"❌ {downgrade_message}")
+                        print(f"⚠️ {self.msg('continuing_current_pytorch')}")
+                        
+            elif status == 'missing':
                 # PyTorch не установлен вообще
-                print(f"\n{self.msg('pytorch_installing')}...")
+                print(f"\n{self.msg('pytorch_installing', version=self.TARGET_PYTORCH_VERSION)}...")
                 install_success, install_message = self.install_pytorch()
                 if install_success:
                     print(f"✅ {install_message}")
