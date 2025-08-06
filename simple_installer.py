@@ -2,24 +2,27 @@
 # -*- coding: utf-8 -*-
 """
 ComfyUI Accelerator v4.0 - Simple & Fixed Installation
-Исправляет все проблемы предыдущих версий
+Исправляет все проблемы и предупреждения
 """
 import subprocess
 import urllib.request
 import zipfile
 import sys
 import os
-import locale
+import warnings
 from pathlib import Path
 from typing import Tuple, Dict
 
 class SimpleInstaller:
-    """Простой установщик ComfyUI Accelerator"""
+    """Простой установщик ComfyUI Accelerator с исправленными ошибками"""
     
     def __init__(self):
         self.python_exe = self._find_python()
-        self.language = self._detect_language()
+        self.language = self._detect_language_modern()
         self.messages = self._load_messages()
+        
+        # Подавляем DeprecationWarning для чистого вывода
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
         
     def _find_python(self) -> str:
         """Поиск исполняемого файла Python"""
@@ -28,15 +31,53 @@ class SimpleInstaller:
                 return exe
         raise FileNotFoundError("Python executable not found")
     
-    def _detect_language(self) -> str:
-        """Автоопределение языка системы"""
+    def _detect_language_modern(self) -> str:
+        """
+        Современный способ определения языка (исправлено DeprecationWarning)
+        Заменяет устаревший locale.getdefaultlocale()
+        """
         try:
-            # Проверяем локаль системы
-            system_locale = locale.getdefaultlocale()[0]
-            if system_locale and system_locale.startswith('ru'):
-                return 'ru'
-        except:
+            # Метод 1: Переменные окружения (наиболее надежный)
+            for env_var in ['LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE']:
+                lang = os.environ.get(env_var, '').lower()
+                if lang.startswith('ru'):
+                    return 'ru'
+            
+            # Метод 2: Windows - проверяем реестр
+            if os.name == 'nt':
+                try:
+                    import subprocess
+                    result = subprocess.run([
+                        'reg', 'query', 'HKCU\\Control Panel\\International',
+                        '/v', 'LocaleName'
+                    ], capture_output=True, text=True, timeout=5)
+                    
+                    if result.returncode == 0:
+                        for line in result.stdout.split('\n'):
+                            if 'LocaleName' in line and 'ru' in line.lower():
+                                return 'ru'
+                except:
+                    pass
+            
+            # Метод 3: Современный locale API (Python 3.11+)
+            try:
+                import locale
+                # Используем современный API вместо устаревшего getdefaultlocale()
+                current_locale = locale.getlocale()
+                if current_locale[0] and current_locale[0].lower().startswith('ru'):
+                    return 'ru'
+                    
+                # Альтернативный способ через encoding
+                encoding = locale.getencoding()
+                if 'ru' in encoding.lower():
+                    return 'ru'
+            except:
+                pass
+                
+        except Exception:
             pass
+        
+        # Fallback - английский по умолчанию
         return 'en'
     
     def _load_messages(self) -> Dict[str, Dict[str, str]]:
@@ -81,6 +122,8 @@ class SimpleInstaller:
                 cmd, capture_output=True, text=True, timeout=timeout, encoding='utf-8'
             )
             return result.returncode == 0, result.stdout + result.stderr
+        except subprocess.TimeoutExpired:
+            return False, "Command timeout"
         except Exception as e:
             return False, str(e)
     
@@ -93,7 +136,7 @@ class SimpleInstaller:
             return False
     
     def check_python_version(self) -> Tuple[bool, str]:
-        """Проверка версии Python (исправленная логика)"""
+        """Проверка версии Python (требуется 3.12+)"""
         success, output = self._run_command([
             self.python_exe, "-c", 
             "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
@@ -102,7 +145,6 @@ class SimpleInstaller:
         if success:
             try:
                 version = float(output.strip())
-                # ИСПРАВЛЕНО: Требуется Python 3.12+, а не 3.9+
                 if version >= 3.12:
                     return True, f"Python {version} - OK"
                 return False, f"Python {version} too old (need 3.12+)"
@@ -115,7 +157,7 @@ class SimpleInstaller:
         success, output = self._run_command([
             self.python_exe, "-m", "pip", "install", "--upgrade", "pip"
         ])
-        return success, "pip upgraded successfully" if success else f"pip upgrade failed: {output}"
+        return success, "pip upgraded successfully" if success else f"pip upgrade failed: {output[:200]}"
     
     def install_triton(self) -> Tuple[bool, str]:
         """Установка Triton Windows"""
@@ -125,10 +167,8 @@ class SimpleInstaller:
         return success, "Triton installed" if success else f"Triton failed: {output[:200]}"
     
     def install_sageattention(self) -> Tuple[bool, str]:
-        """Установка SageAttention (исправленное имя файла)"""
-        # ИСПРАВЛЕНО: Правильное имя wheel файла
+        """Установка SageAttention"""
         wheel_url = "https://github.com/freyandere/TRSA-Comfyui_installer/raw/main/sageattention-2.2.0%2Bcu128torch2.7.1.post1-cp39-abi3-win_amd64.whl"
-        # ИСПРАВЛЕНО: Локальное имя файла должно совпадать с URL
         wheel_file = "sageattention-2.2.0+cu128torch2.7.1.post1-cp39-abi3-win_amd64.whl"
         
         # Скачивание wheel
@@ -232,7 +272,7 @@ if __name__ == "__main__":
         print(f"❌ Critical error: {e}")
     finally:
         print()
-        # Получаем сообщение на правильном языке, даже если installer не создался
+        # Получаем сообщение на правильном языке
         try:
             print(installer.msg('press_enter'))
         except:
