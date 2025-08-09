@@ -14,242 +14,209 @@ from dataclasses import dataclass
 
 @dataclass
 class InstallConfig:
-    """Installation configuration"""
-    triton_command: str = "triton-windows<3.4"
+    triton_command: str = "triton-windows<3.4"  # всегда
     repo_base: str = "https://github.com/freyandere/TRSA-Comfyui_installer/raw/main"
     sage_wheel: str = "sageattention-2.2.0%2Bcu128torch2.7.1.post1-cp39-abi3-win_amd64.whl"
     sage_wheel_local: str = "sageattention-2.2.0+cu128torch2.7.1.post1-cp39-abi3-win_amd64.whl"
     include_zip: str = "python_3.12.7_include_libs.zip"
 
 class ComponentInstaller:
-    """Handles installation of ComfyUI acceleration components"""
-    
-    def __init__(self, config: InstallConfig = None):
+    def __init__(self, config: InstallConfig | None = None) -> None:
         self.config = config or InstallConfig()
         self.logger = logging.getLogger(__name__)
         self.python_exe = self._find_python()
-        
+
     def _find_python(self) -> str:
-        """Find python executable"""
-        if os.path.exists("python.exe"):
-            return "python.exe"
-        if os.path.exists("python"):
-            return "python"
+        if os.path.exists("python.exe"): return "python.exe"
+        if os.path.exists("python"): return "python"
         raise FileNotFoundError("Python executable not found")
-    
-    def _run_pip_command(self, args: list) -> Tuple[bool, str]:
-        """Execute pip command with error handling"""
-        cmd = [self.python_exe, "-m", "pip"] + args
-        
+
+    def _run_pip(self, args: List[str], timeout: int = 300) -> Tuple[bool, str]:
         try:
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=300
-            )
-            return result.returncode == 0, result.stdout + result.stderr
+            r = subprocess.run([self.python_exe, "-m", "pip", *args], capture_output=True, text=True, timeout=timeout)
+            return (r.returncode == 0, (r.stdout + r.stderr))
         except subprocess.TimeoutExpired:
             return False, "Timeout expired"
         except Exception as e:
             return False, str(e)
-    
-    def _run_powershell(self, command: str) -> Tuple[bool, str]:
-        """Execute PowerShell command"""
+
+    def _run_powershell(self, cmd: str, timeout: int = 120) -> Tuple[bool, str]:
         try:
-            result = subprocess.run([
-                "powershell", "-Command", command
-            ], capture_output=True, text=True, timeout=120)
-            return result.returncode == 0, result.stdout + result.stderr
+            r = subprocess.run(["powershell", "-Command", cmd], capture_output=True, text=True, timeout=timeout)
+            return (r.returncode == 0, (r.stdout + r.stderr))
         except Exception as e:
             return False, str(e)
-    
+
     def upgrade_pip(self) -> Tuple[bool, str]:
-        """Upgrade pip to latest version"""
-        success, output = self._run_pip_command(["install", "--upgrade", "pip"])
-        return success, "pip upgraded successfully" if success else f"pip upgrade failed: {output}"
-    
+        ok, out = self._run_pip(["install", "--upgrade", "pip"])
+        return ok, ("pip upgraded successfully" if ok else f"pip upgrade failed: {out}")
+
     def install_triton(self) -> Tuple[bool, str]:
-        """Install Triton with Windows-specific command"""
-        self.logger.info("Installing Triton Windows...")
-        
-        success, output = self._run_pip_command([
-            "install", "-U", self.config.triton_command
-        ])
-        
-        if success:
-            return True, "Triton Windows installed successfully"
-        return False, f"Triton installation failed: {output}"
-    
-    def install_sageattention(self) -> Tuple[bool, str]:
-        """Install SageAttention using exact bat file logic"""
-        self.logger.info("Installing SageAttention 2.2.0...")
-        
-        wheel_url = f"{self.config.repo_base}/{self.config.sage_wheel}"
-        local_wheel = self.config.sage_wheel_local
-        
-        # Download wheel file using PowerShell
-        download_cmd = f"""
-        try {{ 
-            Invoke-WebRequest -Uri '{wheel_url}' -OutFile '{local_wheel}' -ErrorAction Stop
-            Write-Host 'Download completed successfully' 
-        }} catch {{ 
-            Write-Host 'Download failed: ' $_.Exception.Message
-            exit 1 
-        }}
-        """
-        
-        success, output = self._run_powershell(download_cmd)
-        if not success:
-            return False, f"SageAttention download failed: {output}"
-        
-        # Verify file exists
-        if not os.path.exists(local_wheel):
-            return False, "Downloaded wheel file not found"
-        
-        # Install from wheel
-        success, output = self._run_pip_command([
-            "install", local_wheel
-        ])
-        
-        if not success:
-            # Try force reinstall
-            success, output = self._run_pip_command([
-                "install", "--force-reinstall", local_wheel
-            ])
-        
-        # Cleanup wheel file
+        ok, out = self._run_pip(["install", "-U", self.config.triton_command])
+        return (True, "Triton Windows installed successfully") if ok else (False, f"Triton installation failed: {out}")
+
+    def _download_file(self, url: str, dst: str) -> Tuple[bool, str]:
+        ps = f"try {{ Invoke-WebRequest -Uri '{url}' -OutFile '{dst}' -ErrorAction Stop }} catch {{ exit 1 }}"
+        ok, out = self._run_powershell(ps)
+        if ok and os.path.exists(dst):
+            return True, "OK"
+        # fallback urllib
         try:
-            os.remove(local_wheel)
-        except:
-            pass
-        
-        if success:
-            return True, "SageAttention 2.2.0 installed successfully"
-        return False, f"SageAttention installation failed: {output}"
-    
+            urllib.request.urlretrieve(url, dst)
+            return (True, "OK") if os.path.exists(dst) else (False, "Downloaded file missing")
+        except Exception as e:
+            return False, f"Download failed: {e}"
+
+    def _validate_wheel_tag(self, wheel_path: str) -> Tuple[bool, str]:
+        """Сверка cp-тега и win_amd64 с текущим Python/платформой; torch/cuda совместимость."""
+        py_ver = sys.version_info
+        cp_tag = f"cp{py_ver.major}{py_ver.minor}"
+        name = os.path.basename(wheel_path).lower()
+        if "win_amd64" not in name:
+            return False, "Wheel is not win_amd64"
+        if cp_tag not in name and "abi3" not in name:
+            return False, f"Wheel tag mismatch (expected {cp_tag} or abi3)"
+        # Проверка торча/куды
+        ok, out = self._run_pip(["show", "torch"])
+        torch_ver = ""
+        if ok:
+            m = re.search(r"Version:\s*([^\s]+)", out)
+            if m: torch_ver = m.group(1)
+        # Если указан cu128 в имени — требуем cuda 12.8 + torch 2.7.x
+        if "cu128" in name:
+            if not torch_ver.startswith("2.7."):
+                return False, f"Incompatible torch {torch_ver}; require 2.7.x for cu128 wheel"
+        return True, "OK"
+
+    def _ensure_torch_compatible(self) -> Tuple[bool, str]:
+        """Проверить torch/cuda; при несовместимости спросить и выполнить ап/даунгрейд в диапазоне 2.7.1..2.7.9 (cu128)."""
+        # выясним текущий torch и cuda
+        code = "import torch,sys;print(torch.__version__);print(getattr(torch.version,'cuda', ''))"
+        ok, out = self._run_pip(["run", "-q"])  # заглушка для pip; ниже вызов через python -c
+        try:
+            r = subprocess.run([self.python_exe, "-c", code], capture_output=True, text=True, timeout=20)
+            if r.returncode != 0:
+                return True, "Torch not installed; will proceed"
+            lines = [s.strip() for s in (r.stdout or "").splitlines() if s.strip()]
+            cur_ver = lines[0] if lines else ""
+            cur_cuda = lines[1] if len(lines) > 1 else ""
+        except Exception:
+            cur_ver, cur_cuda = "", ""
+        # требования
+        target_cuda = "12.8"
+        min_v, max_v = (2,7,1), (2,7,9)
+        def parse(v: str) -> Tuple[int,int,int]:
+            m = re.match(r"(\d+)\.(\d+)\.(\d+)", v or "")
+            return (int(m.group(1)), int(m.group(2)), int(m.group(3))) if m else (0,0,0)
+        need_fix = (not cur_ver) or parse(cur_ver) < min_v or parse(cur_ver) > max_v or (cur_cuda and cur_cuda != "12.8")
+        if not need_fix:
+            return True, "Torch/CUDA compatible"
+        # запрос подтверждения в non-UI среде — по env-флагу; по умолчанию спросим в консоли
+        answer = os.environ.get("COMFYUI_ACC_AUTO_TORCH_FIX", "").lower()
+        if not answer:
+            try:
+                print("Detected incompatible torch/cuda.")
+                ans = input("Reinstall torch to 2.7.x with CUDA 12.8 now? (y/N): ").strip().lower()
+                answer = "y" if ans in ("y","yes","д","да") else "n"
+            except KeyboardInterrupt:
+                answer = "n"
+        if answer != "y":
+            return False, "User declined torch/cuda fix"
+        target_version = "2.7.9"  # выбираем максимально допустимую в диапазоне
+        index_url = "https://download.pytorch.org/whl/cu128"
+        ok, out = self._run_pip(["install", f"torch=={target_version}", "--force-reinstall", "--index-url", index_url], timeout=1200)
+        return (True, f"torch=={target_version} installed") if ok else (False, f"torch reinstall failed: {out}")
+
+    def install_sageattention(self) -> Tuple[bool, str]:
+        self.logger.info("Installing SageAttention 2.2.0...")
+        wheel_url = f"{self.config.repo_base}/{self.config.sage_wheel}"
+        local = self.config.sage_wheel_local
+        ok, msg = self._download_file(wheel_url, local)
+        if not ok:
+            return False, f"SageAttention download failed: {msg}"
+        if not os.path.exists(local):
+            return False, "Downloaded wheel file not found"
+        ok, why = self._validate_wheel_tag(local)
+        if not ok:
+            try: os.remove(local)
+            except Exception: pass
+            # Попытка согласовать torch при несовместимости
+            fix_ok, fix_msg = self._ensure_torch_compatible()
+            return (False, f"Wheel incompatible: {why}; {fix_msg}") if not fix_ok else (False, f"Wheel incompatible: {why}. Re-run step after torch fix.")
+        ok, out = self._run_pip(["install", local])
+        if not ok:
+            ok, out = self._run_pip(["install", "--force-reinstall", local])
+        try: os.remove(local)
+        except Exception: pass
+        return (True, "SageAttention 2.2.0 installed successfully") if ok else (False, f"SageAttention installation failed: {out}")
+
     def setup_include_libs(self) -> Tuple[bool, str]:
-        """Setup include and libs folders"""
         if os.path.exists("include") and os.path.exists("libs"):
             return True, "include/libs folders already exist"
-        
-        zip_url = f"{self.config.repo_base}/{self.config.include_zip}"
-        temp_zip = "temp_include_libs.zip"
-        
-        # Download using PowerShell
-        download_cmd = f"""
-        try {{ 
-            Invoke-WebRequest -Uri '{zip_url}' -OutFile '{temp_zip}' -ErrorAction Stop
-            Write-Host 'Download completed'
-        }} catch {{ 
-            Write-Host 'Download failed: ' $_.Exception.Message
-            exit 1 
-        }}
-        """
-        
-        success, _ = self._run_powershell(download_cmd)
-        if not success:
-            return False, "include/libs download failed"
-        
-        # Extract zip
+        url = f"{self.config.repo_base}/{self.config.include_zip}"
+        tmp = "temp_include_libs.zip"
+        ok, msg = self._download_file(url, tmp)
+        if not ok:
+            return False, f"include/libs download failed: {msg}"
         try:
-            import zipfile
-            with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
-                zip_ref.extractall('.')
-            
-            os.remove(temp_zip)
-            
-            if os.path.exists("include") and os.path.exists("libs"):
-                return True, "include/libs folders created successfully"
-            return False, "Extraction successful but folders not found"
-            
+            with zipfile.ZipFile(tmp, "r") as zf:
+                names = zf.namelist()
+                if not any(n.rstrip("/").endswith("include") for n in names) or not any(n.rstrip("/").endswith("libs") for n in names):
+                    return False, "Archive does not contain include/libs"
+                zf.extractall(".")
         except Exception as e:
-            if os.path.exists(temp_zip):
-                os.remove(temp_zip)
-            return False, f"Extraction failed: {str(e)}"
-    
+            return False, f"Extraction failed: {e}"
+        finally:
+            try: os.remove(tmp)
+            except Exception: pass
+        if os.path.exists("include") and os.path.exists("libs"):
+            return True, "include/libs folders created successfully"
+        return False, "Extraction successful but folders not found"
+
     def verify_installation(self) -> Dict[str, bool]:
-        """Verify all components are installed correctly"""
-        results = {}
-        
-        # Check Triton
+        res: Dict[str, bool] = {}
         try:
-            result = subprocess.run([
-                self.python_exe, "-c", "import triton"
-            ], capture_output=True, timeout=10)
-            results['triton'] = result.returncode == 0
-        except:
-            results['triton'] = False
-        
-        # Check SageAttention with import test
+            r = subprocess.run([self.python_exe, "-c", "import triton"], capture_output=True, timeout=10)
+            res['triton'] = (r.returncode == 0)
+        except Exception:
+            res['triton'] = False
         try:
-            result = subprocess.run([
-                self.python_exe, "-c", 
-                "import sageattention; print('✓ SageAttention import successful')"
-            ], capture_output=True, timeout=10)
-            results['sageattention'] = result.returncode == 0
-        except:
-            results['sageattention'] = False
-        
-        # Check folders
-        results['include'] = os.path.exists("include")
-        results['libs'] = os.path.exists("libs")
-        
-        return results
-    
+            r = subprocess.run([self.python_exe, "-c", "import sageattention"], capture_output=True, timeout=10)
+            res['sageattention'] = (r.returncode == 0)
+        except Exception:
+            res['sageattention'] = False
+        res['include'] = os.path.exists("include")
+        res['libs'] = os.path.exists("libs")
+        return res
+
     def smart_install(self) -> Tuple[bool, Dict[str, Any]]:
-        """Execute full installation with progress tracking"""
         steps = [
             ("pip_upgrade", self.upgrade_pip),
             ("include_libs", self.setup_include_libs),
             ("triton", self.install_triton),
             ("sageattention", self.install_sageattention),
         ]
-        
-        results = {}
-        total_success = True
-        
-        for step_name, step_func in steps:
-            success, message = step_func()
-            results[step_name] = {
-                'success': success,
-                'message': message
-            }
-            
-            if not success:
-                total_success = False
-                self.logger.error(f"Step {step_name} failed: {message}")
-            else:
-                self.logger.info(f"Step {step_name} completed: {message}")
-        
-        # Final verification
-        verification = self.verify_installation()
-        results['verification'] = verification
-        
-        return total_success, results
-    
+        results: Dict[str, Any] = {}
+        ok_all = True
+        for name, fn in steps:
+            ok, msg = fn()
+            results[name] = {'success': ok, 'message': msg}
+            ok_all &= ok
+            (self.logger.info if ok else self.logger.error)("%s: %s", name, msg)
+        results['verification'] = self.verify_installation()
+        return ok_all, results
+
     def clean_install(self) -> Tuple[bool, str]:
-        """Clean installation - remove and reinstall everything"""
-        # Uninstall packages
-        self._run_pip_command(["uninstall", "-y", "triton", "sageattention"])
-        
-        # Remove folders
-        import shutil
+        self._run_pip(["uninstall", "-y", "triton", "sageattention"])
         for folder in ["include", "libs"]:
             if os.path.exists(folder):
-                try:
-                    shutil.rmtree(folder)
-                except:
-                    pass
-        
-        # Clean temporary files
-        for temp_file in [self.config.sage_wheel_local, "temp_include_libs.zip"]:
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
-        
-        # Reinstall
-        success, results = self.smart_install()
-        return success, "Clean installation completed" if success else "Clean installation failed"
+                try: shutil.rmtree(folder)
+                except Exception: pass
+        for f in [self.config.sage_wheel_local, "temp_include_libs.zip"]:
+            if os.path.exists(f):
+                try: os.remove(f)
+                except Exception: pass
+        ok, _ = self.smart_install()
+        return ok, ("Clean installation completed" if ok else "Clean installation failed")
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    installer = ComponentInstaller()
-    success, results = installer.smart_install()
-    print(f"Installation {'successful' if success else 'failed'}: {results}")
+
