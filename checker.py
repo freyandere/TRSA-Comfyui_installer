@@ -15,7 +15,6 @@ from pathlib import Path
 
 @dataclass
 class SystemInfo:
-    """System information container"""
     python_version: str = ""
     pip_version: str = ""
     platform_info: str = ""
@@ -27,7 +26,6 @@ class SystemInfo:
 
 @dataclass
 class ComponentStatus:
-    """Component installation status"""
     triton: bool = False
     triton_version: str = ""
     sageattention: bool = False
@@ -36,73 +34,51 @@ class ComponentStatus:
     pytorch: bool = False
 
 class SystemChecker:
-    """Comprehensive system diagnostics and health check"""
-    
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
         self.python_exe = self._find_python()
-        
+
     def _find_python(self) -> str:
-        """Find python executable"""
         if os.path.exists("python.exe"):
             return "python.exe"
         if os.path.exists("python"):
             return "python"
-        return "python"  # Fallback
-    
+        raise FileNotFoundError("Python executable not found")
+
     def _run_python_code(self, code: str, timeout: int = 10) -> Tuple[bool, str]:
-        """Execute Python code and return result"""
         try:
-            result = subprocess.run([
-                self.python_exe, "-c", code
-            ], capture_output=True, text=True, timeout=timeout)
-            
-            if result.returncode == 0:
-                return True, result.stdout.strip()
-            return False, result.stderr.strip()
-            
+            r = subprocess.run([self.python_exe, "-c", code], capture_output=True, text=True, timeout=timeout)
+            return (r.returncode == 0, (r.stdout or r.stderr).strip())
         except subprocess.TimeoutExpired:
             return False, "Timeout expired"
         except Exception as e:
             return False, str(e)
-    
+
     def _run_system_command(self, cmd: str, timeout: int = 10) -> Tuple[bool, str]:
-        """Execute system command"""
         try:
-            result = subprocess.run(
-                cmd, shell=True, capture_output=True, text=True, timeout=timeout
-            )
-            if result.returncode == 0:
-                return True, result.stdout.strip()
-            return False, result.stderr.strip()
+            r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
+            return (r.returncode == 0, (r.stdout or r.stderr).strip())
+        except subprocess.TimeoutExpired:
+            return False, "Timeout expired"
         except Exception as e:
             return False, str(e)
-    
+
     def get_system_info(self) -> SystemInfo:
-        """Collect comprehensive system information"""
         info = SystemInfo()
-        
-        # Python version
         try:
             info.python_version = sys.version.split()[0]
-        except:
-            success, output = self._run_python_code("import sys; print(sys.version.split()[0])")
-            info.python_version = output if success else "Unknown"
-        
-        # pip version
-        success, output = self._run_python_code("import pip; print(pip.__version__)")
-        if not success:
-            success, output = self._run_system_command(f"{self.python_exe} -m pip --version")
-            if success:
-                info.pip_version = output.split()[1] if len(output.split()) > 1 else "Unknown"
+        except Exception:
+            ok, out = self._run_python_code("import sys; print(sys.version.split()[0])")
+            info.python_version = out if ok else "Unknown"
+        ok, out = self._run_python_code("import pip; print(pip.__version__)")
+        if not ok:
+            ok, out = self._run_system_command(f"{self.python_exe} -m pip --version")
+            info.pip_version = (out.split()[1] if ok and len(out.split()) > 1 else out)
         else:
-            info.pip_version = output
-        
-        # Platform info
-        info.platform_info = f"{platform.system()} {platform.release()} {platform.machine()}"
-        
-        # PyTorch and CUDA info
-        pytorch_code = '''
+            info.pip_version = out
+        info.platform_info = f"{__import__('platform').system()} {__import__('platform').release()} {__import__('platform').machine()}"
+        pytorch_code = r"""
+import sys
 try:
     import torch
     print(f"pytorch:{torch.__version__}")
@@ -111,7 +87,7 @@ try:
         print(f"cuda_version:{torch.version.cuda}")
         try:
             print(f"gpu_name:{torch.cuda.get_device_name(0)}")
-        except:
+        except Exception:
             print("gpu_name:Unknown")
     else:
         print("cuda_version:Not available")
@@ -121,302 +97,145 @@ except ImportError:
     print("cuda_available:False")
     print("cuda_version:Not available")
     print("gpu_name:PyTorch not available")
-'''
-        
-        success, output = self._run_python_code(pytorch_code)
-        if success:
-            for line in output.split('\n'):
-                if ':' in line:
-                    key, value = line.split(':', 1)
-                    if key == "pytorch":
-                        info.pytorch_version = value
-                    elif key == "cuda_available":
-                        info.cuda_available = value.lower() == "true"
-                    elif key == "cuda_version":
-                        info.cuda_version = value
-                    elif key == "gpu_name":
-                        info.gpu_name = value
-        
-        # GPU driver version via nvidia-smi
-        success, output = self._run_system_command("nvidia-smi --query-gpu=driver_version --format=csv,noheader,nounits")
-        if success:
-            info.gpu_driver = output.split('\n')[0] if output else "Unknown"
-        else:
-            info.gpu_driver = "nvidia-smi not available"
-        
+"""
+        ok, out = self._run_python_code(pytorch_code, timeout=20)
+        if ok:
+            for line in out.splitlines():
+                if ":" in line:
+                    k, v = line.split(":", 1)
+                    if k == "pytorch":
+                        info.pytorch_version = v
+                    elif k == "cuda_available":
+                        info.cuda_available = v.strip().lower() == "true"
+                    elif k == "cuda_version":
+                        info.cuda_version = v
+                    elif k == "gpu_name":
+                        info.gpu_name = v
+        ok, out = self._run_system_command("nvidia-smi --query-gpu=driver_version --format=csv,noheader,nounits", timeout=5)
+        info.gpu_driver = (out.splitlines()[0] if ok and out else "nvidia-smi not available")
         return info
-    
+
     def check_components(self) -> ComponentStatus:
-        """Check installation status of all components"""
         status = ComponentStatus()
-        
-        # Check Triton
-        success, output = self._run_python_code("import triton; print(triton.__version__)")
-        if success:
+        ok, out = self._run_python_code("import triton, sys; print(getattr(triton, '__version__', ''))")
+        if ok:
             status.triton = True
-            status.triton_version = output
-        
-        # Check SageAttention
-        success, _ = self._run_python_code("import sageattention")
-        status.sageattention = success
-        
-        # Check folders with absolute paths for reliability
-        current_dir = os.getcwd()
-        status.include_folder = os.path.exists(os.path.join(current_dir, "include"))
-        status.libs_folder = os.path.exists(os.path.join(current_dir, "libs"))
-        
-        # Check PyTorch
-        success, _ = self._run_python_code("import torch")
-        status.pytorch = success
-        
+            status.triton_version = out
+        ok, _ = self._run_python_code("import sageattention")
+        status.sageattention = ok
+        cur = os.getcwd()
+        status.include_folder = os.path.exists(os.path.join(cur, "include"))
+        status.libs_folder = os.path.exists(os.path.join(cur, "libs"))
+        ok, _ = self._run_python_code("import torch")
+        status.pytorch = ok
         return status
-    
+
     def run_quick_check(self) -> Tuple[bool, Dict[str, bool]]:
-        """Quick health check - returns overall status and component status"""
-        components = self.check_components()
-        
-        quick_status = {
-            'triton': components.triton,
-            'sageattention': components.sageattention,
-            'include_folder': components.include_folder,
-            'libs_folder': components.libs_folder,
-            'pytorch': components.pytorch
+        c = self.check_components()
+        quick = {
+            "triton": c.triton,
+            "sageattention": c.sageattention,
+            "include_folder": c.include_folder,
+            "libs_folder": c.libs_folder,
+            "pytorch": c.pytorch,
         }
-        
-        overall_healthy = all(quick_status.values())
-        
-        return overall_healthy, quick_status
-    
+        return all(quick.values()), quick
+
     def run_gpu_benchmark(self) -> Dict[str, Any]:
-        """Run simple GPU performance test"""
-        benchmark_code = '''
-try:
-    import torch
-    import time
-    
-    if not torch.cuda.is_available():
-        print("benchmark_status:CUDA not available")
-    else:
-        device = torch.cuda.get_device_name(0)
-        print(f"benchmark_device:{device}")
-        
-        # Simple matrix multiplication benchmark
-        size = 2048
-        a = torch.randn(size, size).cuda()
-        b = torch.randn(size, size).cuda()
-        
-        # Warmup
+        code = r"""
+import torch, time
+if not torch.cuda.is_available():
+    print("benchmark_status:CUDA not available")
+else:
+    dev = torch.cuda.get_device_name(0)
+    total = torch.cuda.get_device_properties(0).total_memory
+    # адаптивный размер
+    size = 1024 if total < 6 * 1024**3 else 2048
+    print(f"benchmark_device:{dev}")
+    a = torch.randn(size, size, device='cuda')
+    b = torch.randn(size, size, device='cuda')
+    torch.cuda.synchronize()
+    for _ in range(2):
+        c = a @ b
         torch.cuda.synchronize()
-        for _ in range(3):
-            c = torch.matmul(a, b)
+    start = time.time()
+    iters = 5
+    for _ in range(iters):
+        c = a @ b
         torch.cuda.synchronize()
-        
-        # Benchmark
-        start_time = time.time()
-        for _ in range(10):
-            c = torch.matmul(a, b)
-        torch.cuda.synchronize()
-        end_time = time.time()
-        
-        avg_time = (end_time - start_time) / 10
-        gflops = (2 * size**3) / (avg_time * 1e9)
-        
-        print(f"benchmark_time:{avg_time:.4f}")
-        print(f"benchmark_gflops:{gflops:.2f}")
-        print("benchmark_status:SUCCESS")
-        
-except Exception as e:
-    print(f"benchmark_status:ERROR - {str(e)}")
-'''
-        
-        result = {
-            'status': 'UNKNOWN',
-            'device': 'Unknown',
-            'time_ms': 0.0,
-            'gflops': 0.0,
-            'error': None
-        }
-        
-        success, output = self._run_python_code(benchmark_code, timeout=30)
-        if success:
-            for line in output.split('\n'):
-                if ':' in line:
-                    key, value = line.split(':', 1)
-                    if key == "benchmark_status":
-                        result['status'] = value
-                    elif key == "benchmark_device":
-                        result['device'] = value
-                    elif key == "benchmark_time":
-                        result['time_ms'] = float(value) * 1000
-                    elif key == "benchmark_gflops":
-                        result['gflops'] = float(value)
+    avg = (time.time() - start) / iters
+    gflops = (2 * (size**3)) / (avg * 1e9)
+    print(f"benchmark_time:{avg:.4f}")
+    print(f"benchmark_gflops:{gflops:.2f}")
+    print("benchmark_status:SUCCESS")
+"""
+        res: Dict[str, Any] = {'status': 'UNKNOWN', 'device': 'Unknown', 'time_ms': 0.0, 'gflops': 0.0, 'error': None}
+        ok, out = self._run_python_code(code, timeout=60)
+        if ok:
+            for line in out.splitlines():
+                if ":" in line:
+                    k, v = line.split(":", 1)
+                    if k == "benchmark_status": res['status'] = v
+                    elif k == "benchmark_device": res['device'] = v
+                    elif k == "benchmark_time": res['time_ms'] = float(v) * 1000
+                    elif k == "benchmark_gflops": res['gflops'] = float(v)
         else:
-            result['status'] = 'ERROR'
-            result['error'] = output
-        
-        return result
-    
+            res['status'] = 'ERROR'
+            res['error'] = out
+        return res
+
     def check_comfyui_compatibility(self) -> Dict[str, Any]:
-        """Check ComfyUI specific compatibility"""
-        checks = {}
-        
-        # Check if we're in ComfyUI directory structure
-        comfyui_indicators = [
-            "ComfyUI",
-            "main.py",
-            "nodes.py",
-            "model_management.py"
-        ]
-        
-        checks['comfyui_directory'] = any(
-            os.path.exists(indicator) for indicator in comfyui_indicators
-        )
-        
-        # Check Python embeded structure
+        checks: Dict[str, Any] = {}
+        indicators = ["ComfyUI", "main.py", "nodes.py", "model_management.py"]
+        checks['comfyui_directory'] = any(os.path.exists(p) for p in indicators)
         checks['python_embeded'] = os.path.exists("python.exe") or os.path.exists("Scripts")
-        
-        # Check common ComfyUI packages
-        packages_to_check = [
-            "torch", "torchvision", "transformers", "diffusers", 
-            "safetensors", "accelerate", "xformers"
-        ]
-        
+        pkgs = ["torch", "torchvision", "transformers", "diffusers", "safetensors", "accelerate", "xformers"]
         checks['packages'] = {}
-        for package in packages_to_check:
-            success, version = self._run_python_code(f"import {package}; print({package}.__version__)")
-            checks['packages'][package] = {
-                'installed': success,
-                'version': version if success else None
-            }
-        
+        for pkg in pkgs:
+            ok, ver = self._run_python_code(f"import {pkg}; print(getattr({pkg}, '__version__', ''))", timeout=10)
+            checks['packages'][pkg] = {'installed': ok, 'version': (ver if ok else None)}
         return checks
-    
+
+    def _calculate_health_score(self, report: Dict[str, Any]) -> Dict[str, Any]:
+        score = 0
+        max_score = 0
+        issues: List[str] = []
+        comp = report['components']
+        if comp['triton']: score += 15
+        else: issues.append("Triton not installed")
+        if comp['sageattention']: score += 15
+        else: issues.append("SageAttention not installed")
+        if comp['include_folder'] and comp['libs_folder']: score += 10
+        else: issues.append("include/libs folders missing")
+        max_score += 40
+        sysi = report['system_info']
+        if sysi['cuda_available']: score += 20
+        else: issues.append("CUDA not available")
+        if sysi['pytorch_version']: score += 10
+        else: issues.append("PyTorch not installed")
+        max_score += 30
+        bench = report['gpu_benchmark']
+        if bench['status'] == 'SUCCESS':
+            g = bench['gflops']
+            score += 30 if g > 1000 else 20 if g > 500 else 10 if g > 100 else 5
+        else:
+            issues.append("GPU benchmark failed")
+        max_score += 30
+        pct = (score / max_score * 100) if max_score else 0.0
+        return {'score': score, 'max_score': max_score, 'percentage': round(pct, 1), 'grade': self._get_grade(pct), 'issues': issues}
+
+    def _get_grade(self, pct: float) -> str:
+        return "A+ (Excellent)" if pct >= 90 else "A (Very Good)" if pct >= 80 else "B (Good)" if pct >= 70 else "C (Fair)" if pct >= 60 else "D (Poor)" if pct >= 50 else "F (Critical Issues)"
+
     def generate_detailed_report(self) -> Dict[str, Any]:
-        """Generate comprehensive system report"""
-        self.logger.info("Generating detailed system report...")
-        
-        report = {
+        rep = {
             'timestamp': str(__import__('datetime').datetime.now()),
             'system_info': asdict(self.get_system_info()),
             'components': asdict(self.check_components()),
             'gpu_benchmark': self.run_gpu_benchmark(),
-            'comfyui_compatibility': self.check_comfyui_compatibility()
+            'comfyui_compatibility': self.check_comfyui_compatibility(),
         }
-        
-        # Add health score
-        score = self._calculate_health_score(report)
-        report['health_score'] = score
-        
-        return report
-    
-    def _calculate_health_score(self, report: Dict[str, Any]) -> Dict[str, Any]:
-        """Calculate system health score"""
-        score = 0
-        max_score = 0
-        issues = []
-        
-        # Component checks (40 points max)
-        components = report['components']
-        if components['triton']:
-            score += 15
-        else:
-            issues.append("Triton not installed")
-        
-        if components['sageattention']:
-            score += 15
-        else:
-            issues.append("SageAttention not installed")
-        
-        if components['include_folder'] and components['libs_folder']:
-            score += 10
-        else:
-            issues.append("include/libs folders missing")
-        
-        max_score += 40
-        
-        # System checks (30 points max)
-        system = report['system_info']
-        if system['cuda_available']:
-            score += 20
-        else:
-            issues.append("CUDA not available")
-        
-        if system['pytorch_version']:
-            score += 10
-        else:
-            issues.append("PyTorch not installed")
-        
-        max_score += 30
-        
-        # Performance check (30 points max)
-        benchmark = report['gpu_benchmark']
-        if benchmark['status'] == 'SUCCESS':
-            if benchmark['gflops'] > 1000:
-                score += 30
-            elif benchmark['gflops'] > 500:
-                score += 20
-            elif benchmark['gflops'] > 100:
-                score += 10
-            else:
-                score += 5
-        else:
-            issues.append("GPU benchmark failed")
-        
-        max_score += 30
-        
-        percentage = (score / max_score) * 100 if max_score > 0 else 0
-        
-        return {
-            'score': score,
-            'max_score': max_score,
-            'percentage': round(percentage, 1),
-            'grade': self._get_grade(percentage),
-            'issues': issues
-        }
-    
-    def _get_grade(self, percentage: float) -> str:
-        """Convert percentage to letter grade"""
-        if percentage >= 90:
-            return "A+ (Excellent)"
-        elif percentage >= 80:
-            return "A (Very Good)"
-        elif percentage >= 70:
-            return "B (Good)"
-        elif percentage >= 60:
-            return "C (Fair)"
-        elif percentage >= 50:
-            return "D (Poor)"
-        else:
-            return "F (Critical Issues)"
-    
-    def run_quick_check(self) -> Tuple[bool, Dict[str, bool]]:
-        """Quick health check - returns overall status and component status"""
-        components = self.check_components()
-        
-        quick_status = {
-            'triton': components.triton,
-            'sageattention': components.sageattention,
-            'folders': components.include_folder and components.libs_folder,
-            'pytorch': components.pytorch
-        }
-        
-        overall_healthy = all(quick_status.values())
-        
-        return overall_healthy, quick_status
+        rep['health_score'] = self._calculate_health_score(rep)
+        return rep
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    checker = SystemChecker()
-    
-    print("🔍 Running system check...")
-    healthy, status = checker.run_quick_check()
-    
-    print(f"\n🎯 Overall Status: {'✅ Healthy' if healthy else '❌ Issues Found'}")
-    for component, ok in status.items():
-        print(f"   {component}: {'✅' if ok else '❌'}")
-    
-    if not healthy:
-        print("\n📊 Generating detailed report...")
-        report = checker.generate_detailed_report()
-        print(f"Health Score: {report['health_score']['percentage']}% ({report['health_score']['grade']})")
 
