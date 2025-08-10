@@ -1,421 +1,177 @@
-# 🚀 ComfyUI Accelerator v2.0
+# ComfyUI Accelerator — v2.5
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
-[![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
-[![Python](https://img.shields.io/badge/python-3.12+-green.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
-[![License](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
+Speeds up ComfyUI by 2-3 times on Windows using Triton and SageAttention.
 
-**Makes ComfyUI 2-3x faster with Triton and SageAttention optimization**
+**Languages**: [English](https://github.com/freyandere/TRSA-Comfyui_installer/tree/main) | [Русский](https://github.com/freyandere/TRSA-Comfyui_installer/tree/main-ru)
 
-🌐 **Languages**: [English](https://github.com/freyandere/TRSA-Comfyui_installer/tree/main) | [Русский](https://github.com/freyandere/TRSA-Comfyui_installer/tree/main-ru)
+## Table of Contents
 
----
-
-## 📋 Table of Contents
-- [🎯 What's New in v2.0](#-whats-new-in-v30)
-- [⚡ Quick Start](#-quick-start)
-- [🔧 Installation](#-installation)
-- [📊 System Requirements](#-system-requirements)
-- [🚀 Performance](#-performance)
-- [🛠️ Features](#️-features)
-- [🔍 Diagnostics](#-diagnostics)
-- [❓ Troubleshooting](#-troubleshooting)
-- [🤝 Contributing](#-contributing)
-
----
-
-## 🎯 What's New in v2.0
-
-### 🏗️ **Complete Architecture Refactor**
-- **99.5% smaller launcher**: 1,000+ lines → **70 lines**
-- **Dynamic module loading**: All functionality loaded from GitHub
-- **Auto-updates**: Get latest features without redistributing files
-- **Professional interface**: Progress bars, animations, health scoring
-
-### 🔧 **Enhanced Installation**
-- **Fixed Triton**: Windows-optimized `triton-windows<3.4`
-- **SageAttention**: CUDA 12.8 + PyTorch 2.7.1 wheel support
-- **Auto-cleanup**: Zero footprint - all temp files removed
-- **Smart diagnostics**: A+ to F health scoring system
-
-### 🛡️ **Bulletproof Reliability**
-- **UTF-8 support**: Proper Unicode handling
-- **Error recovery**: Detailed diagnostics with solutions
-- **Network resilience**: Retry logic with fallback methods
-
----
-
-## ⚡ Quick Start
-
-### 1️⃣ **Download**
-
-# [Download the lightweight launcher (70 lines)](https://github.com/freyandere/TRSA-Comfyui_installer/releases/tag/v2_ru.en)
+- [What's new in v2.5](#-whats-new-in-v25)
+- [Quick Start](#-quick-start)
+- [Installation](#-installation)
+- [System Requirements](#-system-requirements)
+- [Performance](#-performance)
+- [Features](#%EF%B8%8F-features)
+- [Diagnostics](#-diagnostics)
+- [Troubleshooting](#-troubleshooting)
+- [License](#-license)
+- [Acknowledgments](#-acknowledgments)
+- [Support the Project](#-support-the-project)
+- [Links](#-links)
+- [Related Projects](#-related-projects)
 
 
-or via curl
-```
-curl -O https://github.com/freyandere/TRSA-Comfyui_installer/releases/download/v.2/TRSA_installer.bat
-```
+## What's new in v2.5
 
-### 2️⃣ **Place**
-Put `TRSA_installer.bat` in your ComfyUI folder:
-```
+- Single-file core installer (installer_core.py) with secure HTTPS downloads and safe ZIP extraction.
+- Step-by-step TUI without progress bars: clear statuses and a final summary.
+- Strict compatibility checks:
+    - Torch “2.7.1+cu128” is correctly identified as 2.7.1.
+    - Strictly CUDA 12.8 for the target configuration.
+    - SageAttention wheel is validated against win_amd64, cpXY/abi3, and Torch 2.7.1.
+- Strict pinning: triton-windows<3.4.
+- Final report for each component (torch/include+libs/triton/sageattention).
 
+
+## Quick Start
+
+1) Place the .bat file in:
 ComfyUI_windows_portable/
-└── python_embeded/
-├── python.exe          ← Required
-└── TRSA_installer.bat        ← Place here
+└─ python_embeded/
+├─ python.exe
+└─ TRSA_installer.bat
 
-```
+text
 
-### 3️⃣ **Run**
-```
+2) Run the .bat file (double-click) — it will download installer_core.py and execute it with the embedded Python.
+3) Follow the prompts:
 
+- If there's a Torch/CUDA mismatch, it will offer to reinstall Torch 2.7.1 (CUDA 12.8) (~2.5GB).
+- Step order: include/libs → Triton (<3.4) → SageAttention wheel.
+- A summary report is provided at the end.
 
-# Double-click TRSA_installer.bat or run:
 
-TRSA_installer.bat
+## Installation
 
-```
+Installs:
 
-### 4️⃣ **Install**
-- Choose **1. 🚀 SPEED UP MY COMFYUI**
-- Watch the magic happen automatically
-- Select number 5 to exit (will cleanup all the temp files)
-- Restart ComfyUI to enjoy 2-3x speed boost!
+- Triton for Windows: `triton-windows<3.4`
+- SageAttention 2.2.x (CUDA 12.8 + Torch 2.7.1)
+- include/ and libs/ for the portable Python
+- Utility dependencies (minimum required)
 
----
 
-## 🔧 Installation
+## System Requirements
 
-### 📦 **What Gets Installed**
-1. **Triton Windows** (`triton-windows<3.4`) - GPU kernel optimization
-2. **SageAttention** (v2.2.0) - Attention mechanism acceleration  
-3. **Include/Libs** - Python headers for compilation
-4. **Dependencies** - Automatic pip upgrade and requirements
+- Windows 10/11 x64
+- Embedded Python 3.11/3.12 (ComfyUI portable)
+- NVIDIA GPU (CUDA)
+- Up to ~2.5GB of traffic and disk space if reinstalling Torch
 
-### 🎮 **Installation Process**
-```
 
-[██████████] 100% Installation Complete!
+## Performance
 
-✅ pip upgraded successfully
-✅ include/libs folders created
-✅ Triton Windows installed
-✅ SageAttention 2.2.0 installed
-✅ All components verified
+- Typical speed-up: 2–3× with correct Torch/CUDA versions and Triton/SageAttention installed.
+- For detailed benchmarks, see the SageAttention documentation.
 
-🎉 ComfyUI is now 2-3x faster!
-💡 Restart ComfyUI to apply changes
 
-```
+## Features
 
----
+- Auto-detection of language (EN/RU) with an option for manual override via environment variables.
+- Step-by-step TUI installation without progress bars.
+- Detailed final report on all components.
+- Strict compatibility checks and secure downloads.
 
-## 📊 System Requirements
 
-### 🖥️ **Minimum Requirements**
-- **OS**: Windows 10/11 (64-bit)
-- **Python**: 3.9+ (included in ComfyUI portable)
-- **GPU**: NVIDIA with CUDA support
-- **RAM**: 8GB+ recommended
-- **Storage**: 2GB free space
+## Diagnostics
 
-### 🚀 **Recommended Setup**
-- **GPU**: RTX 3060/4060 or better
-- **CUDA**: 12.8+ (for best SageAttention performance)
-- **PyTorch**: 2.7.1+ (auto-detected)
-- **ComfyUI**: Latest portable version
+- Quick check for the presence of include/libs.
+- Validation of Torch/CUDA versions and SageAttention wheel compatibility.
+- Verification of successful Triton installation and module imports.
 
-### ✅ **Compatibility Matrix**
-| Component | Version | Status |
-|-----------|---------|--------|
-| Python | 3.9-3.12 | ✅ Supported |
-| CUDA | 11.8-12.8 | ✅ Supported |
-| PyTorch | 2.0-2.7+ | ✅ Supported |
-| RTX 30xx | All models | ✅ Supported |
-| RTX 40xx | All models | ✅ Supported |
-| RTX 50xx | Blackwell | ✅ Supported |
 
----
+## Troubleshooting
 
-## 🚀 Performance
+- Torch/CUDA mismatch: confirm the reinstallation of Torch to 2.7.1 (CUDA 12.8).
+- “not a supported wheel”: check the cp-tag (cp311/cp312) and platform (win_amd64).
+- Network/SSL errors: check your proxy/AV; try again (HTTPS + certificate verification is used).
+- No PowerShell: urllib is used; PowerShell is only a fallback.
 
-### 📈 **Benchmark Results**
-```
 
-🎮 GPU: NVIDIA GeForce RTX 4090
-⏱️  Benchmark: 0.40ms average
-🔥 Performance: 42,960.5 GFLOPS
-🎯 Health Score: 100% (A+ Excellent)
+### **Manual Installation**
 
-```
+If the automatic installation fails:
 
-### ⚡ **Speed Improvements**
-See official [repo](https://github.com/thu-ml/SageAttention) .
-
-### 📊 **Before vs After**
-| Workflow | Before | After | Speedup |
-|----------|--------|-------|---------|
-| SDXL 1024x1024 | 8.5s | 3.2s | **2.7x** |
-| Flux.1 Text | 45s | 18s | **2.5x** |
-| Video (24 frames) | 180s | 65s | **2.8x** |
-| Upscaling 4x | 25s | 12s | **2.1x** |
-
----
-
-## 🛠️ Features
-
-### 🎨 **User Interface**
-- **🌐 Multilingual**: Auto-detection (English/Russian)
-- **📊 Progress Bars**: Real-time installation progress
-- **🎯 Health Dashboard**: System status with A+ to F grades
-- **💫 Animations**: Professional loading spinners
-- **📱 Responsive**: Works in any terminal window
-
-### 🔧 **Installation Features**
-- **🚀 One-Click Install**: Fully automated process
-- **🔄 Smart Retry**: Fallback methods for failed downloads
-- **🧹 Auto-Cleanup**: Zero footprint after installation
-- **📦 Dependency Management**: Automatic pip and package handling
-- **🛡️ Error Recovery**: Detailed diagnostics with solutions
-
-### 🔍 **Diagnostic Tools**
-- **⚡ Quick Check**: Instant system status
-- **📊 Detailed Report**: Comprehensive system analysis
-- **🎮 GPU Benchmark**: Performance testing with GFLOPS
-- **🏥 Health Scoring**: 100-point system with issue identification
-- **🔧 Component Verification**: Import testing for all packages
-
-### 🛡️ **Reliability Features**
-- **🚪 Signal Handling**: Graceful cleanup on any exit
-- **🔒 UTF-8 Support**: Proper Unicode character handling
-- **🔄 Network Resilience**: Multiple download methods
-- **💾 Memory Management**: Efficient resource usage
-- **🧹 Complete Cleanup**: No orphaned temp files
-
----
-
-## 🔍 Diagnostics
-
-### 🎯 **Health Check**
-```
-
-
-# Quick system status
-
-Choose: 2. 🔍 Check Installation
-
-✅ Triton installed
-✅ SageAttention installed
-✅ PyTorch working
-✅ include/libs folders found
-✅ CUDA available
-
-🎉 All systems operational!
-
-```
-
-### 📊 **Detailed Report**
-```
-
-
-# Comprehensive analysis
-
-Choose: 4. 📊 Detailed Report
-
-🖥️  SYSTEM INFORMATION
-🐍 Python: 3.12.10
-🧠 PyTorch: 2.7.1+cu128
-🔥 CUDA: 12.8
-🎮 GPU: RTX 4090
-
-🚀 GPU PERFORMANCE
-🎮 Device: NVIDIA GeForce RTX 4090
-⏱️  Average time: 0.40ms
-🔥 Performance: 42,960.5 GFLOPS
-
-🎯 HEALTH SCORE: 100% (A+ Excellent)
-
-```
-
-### 🏥 **Health Scoring System**
-- **A+ (90-100%)**: Excellent - All systems optimal
-- **A (80-89%)**: Very Good - Minor optimizations possible
-- **B (70-79%)**: Good - Some improvements recommended
-- **C (60-69%)**: Fair - Several issues need attention
-- **D (50-59%)**: Poor - Major problems detected
-- **F (0-49%)**: Critical - System requires immediate fixes
-
----
-
-## ❓ Troubleshooting
-
-### 🚨 **Common Issues**
-
-#### **"Python not found"**
-```
-
-❌ ERROR: python.exe not found!
-📍 Place TRSA_installer.bat in folder with python.exe
-Usually: ComfyUI_windows_portable\python_embedded\
-
-```
-**Solution**: Move `TRSA_installer.bat` to the correct folder with `python.exe`
-
-#### **"Triton installation failed"**
-```
-
-❌ Triton installation failed: Package conflicts
-
-```
-**Solutions**:
-1. Run **3. 🛠️ Reinstall Everything** (cleans conflicts)
-2. Update PyTorch: `pip install torch --upgrade`
-3. Clear pip cache: `pip cache purge`
-
-#### **"SageAttention download failed"**
-```
-
-❌ SageAttention download failed: Network error
-
-```
-**Solutions**:
-1. Check internet connection
-2. Disable antivirus temporarily
-3. Try VPN if GitHub is blocked
-4. Use manual installation (see docs)
-
-#### **"Encoding error"**
-```
-
-❌ Bootstrap failed: 'charmap' codec can't decode
-
-```
-**Solution**: Use the updated launcher with UTF-8 support
-
-### 🔧 **Manual Installation**
-If automatic installation fails:
-
-```
-
-
+```bash
 # 1. Install Triton manually
-
 python -m pip install -U "triton-windows<3.4"
 
-# 2. Download SageAttention wheel
-
+# 2. Download the SageAttention wheel
 # Visit: https://github.com/freyandere/TRSA-Comfyui_installer/releases
 
-# 3. Install from wheel
-
+# 3. Install from the wheel
 python -m pip install sageattention-2.2.0*.whl
 
-# 4. Verify installation
-
-python -c "import triton, sageattention; print('✅ Success!')"
-
+# 4. Verify the installation
+python -c "import triton, sageattention; print('Success!')"
 ```
 
-### 📞 **Getting Help**
+
+### **Getting Help**
+
 - **Issues**: [GitHub Issues](https://github.com/freyandere/TRSA-Comfyui_installer/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/freyandere/TRSA-Comfyui_installer/discussions)
 - **Documentation**: [Wiki](https://github.com/freyandere/TRSA-Comfyui_installer/wiki)
 
----
 
-## 🤝 Contributing
+### **Contribution Guidelines**
 
-### 🛠️ **Development Setup**
-```
-
-
-# Clone repository
-
-git clone https://github.com/freyandere/TRSA-Comfyui_installer.git
-cd TRSA-Comfyui_installer
-
-# Edit modules
-
-code core_app.py installer.py checker.py ui_manager.py
-
-# Test changes
-
-TRSA_installer.bat
-
-```
-
-### 📋 **Module Structure**
-```
-
-📁 Repository/
-├── 🐍 core_app.py       \# Main application (380 lines)
-├── 🐍 installer.py      \# Installation logic (280 lines)
-├── 🐍 checker.py        \# System diagnostics (420 lines)
-├── 🐍 ui_manager.py     \# Interface manager (580 lines)
-├── 📄 config.json       \# Configuration
-└── 📄 TRSA_installer.bat      \# Bootstrap (70 lines)
-
-```
-
-### 🎯 **Contributing Guidelines**
 1. **Fork** the repository
-2. **Create** feature branch: `git checkout -b feature/amazing-feature`
-3. **Test** thoroughly on clean ComfyUI installation
-4. **Document** changes in code and README
-5. **Submit** pull request with detailed description
+2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
+3. **Test thoroughly** on a clean ComfyUI installation
+4. **Document** your changes in the code and README
+5. **Submit** a pull request with a detailed description
 
-### 📝 **Code Standards**
-- **Python**: Google docstrings, type hints, PEP 8
-- **Batch**: Clear comments, error handling
-- **Testing**: Verify on multiple Windows versions
-- **Documentation**: Update README and changelog
+## License
 
----
+Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
 
-## 📜 License
+## Acknowledgments
 
-Apache License 2.0  - see [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-Special thanks to the developers of projects that made this possible:
+Special thanks to the developers of the projects that made this possible:
 
 - **[Triton Windows](https://github.com/woct0rdho/triton-windows)** - Triton port for Windows by [@woct0rdho](https://github.com/woct0rdho) and the community
-- **[SageAttention](https://github.com/thu-ml/SageAttention)** - Quantized attention from Tsinghua University researchers
-- **[ComfyUI](https://github.com/comfyanonymous/ComfyUI)** - Powerful node-based interface by [@comfyanonymous](https://github.com/comfyanonymous)
-- **[Telegram channel - Psy Eyes](https://t.me/Psy_Eyes)** - for highlighting the repository and community support
-- **[Telegram channel - FRALID - НАСМОТРЕННОСТЬ](https://t.me/fralid95)** - for his support through years.
+- **[SageAttention](https://github.com/thu-ml/SageAttention)** - Quantized attention from researchers at Tsinghua University
+- **[ComfyUI](https://github.com/comfyanonymous/ComfyUI)** - A powerful node-based interface by [@comfyanonymous](https://github.com/comfyanonymous)
+- **[Telegram channel - Psy Eyes](https://t.me/Psy_Eyes)** - for highlighting the repository and community support.
+- **[Telegram channel - FRALID | НАСМОТРЕННОСТЬ](https://t.me/fralid95)** - for support and guidance.
 
-Without their incredible work, this project would not have been possible! 🚀
+Without their incredible work, this project would not be possible!
 
-## ⭐ Support the Project
+## Support the Project
 
-If ComfyUI Accelerator helped speed up your workflows:
+If ComfyUI Accelerator has helped speed up your workflows:
 
-- ⭐ **Star** the repository
-- 🐛 **Report** issues you encounter  
-- 💡 **Suggest** new features
-- 🤝 **Contribute** improvements
-- 📢 **Share** with the community
+- **Star** the repository
+- **Report** any issues you encounter
+- **Suggest** new features
+- **Contribute** improvements
+- **Share** with the community
 
-## 🔗 Links
 
-- **🌐 Main Repository**: [English Branch](https://github.com/freyandere/TRSA-Comfyui_installer/tree/main)
-- **🇷🇺 Russian Version**: [Russian Branch](https://github.com/freyandere/TRSA-Comfyui_installer/tree/main-ru)
-- **📋 Issues**: [Report Problems](https://github.com/freyandere/TRSA-Comfyui_installer/issues)
-- **💬 Discussions**: [Community Forum](https://github.com/freyandere/TRSA-Comfyui_installer/discussions)
-- **📚 Wiki**: [Documentation](https://github.com/freyandere/TRSA-Comfyui_installer/wiki)
+## Links
 
-### 🔗 **Related Projects**
+- **Main Repository**: [English Branch](https://github.com/freyandere/TRSA-Comfyui_installer/tree/main)
+- **Russian Version**: [Russian Branch](https://github.com/freyandere/TRSA-Comfyui_installer/tree/main-ru)
+- **Issues**: [Report Issues](https://github.com/freyandere/TRSA-Comfyui_installer/issues)
+- **Discussions**: [Community Forum](https://github.com/freyandere/TRSA-Comfyui_installer/discussions)
+- **Wiki**: [Documentation](https://github.com/freyandere/TRSA-Comfyui_installer/wiki)
+
+
+### **Related Projects**
 
 - **[Triton Windows](https://github.com/woct0rdho/triton-windows)** - GPU compiler for acceleration
 - **[SageAttention](https://github.com/thu-ml/SageAttention)** - Quantized attention mechanisms
 - **[ComfyUI](https://github.com/comfyanonymous/ComfyUI)** - Node-based interface for AI
 
-*Made with ❤️ for the ComfyUI community*
-
-⁂
+*Made with love for the ComfyUI community*
