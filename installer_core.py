@@ -1,17 +1,8 @@
-# installer_core.py
-# Python 3.11+, Windows-friendly, no external deps beyond optional certifi.
-from __future__ import annotations
+# installer_core.py (Python 3.11+)
+# Minimal addition: interactive language selector (RU/EN) before localization table is built.
 
-import logging
-import os
-import re
-import shutil
-import ssl
-import subprocess
-import sys
-import urllib.parse
-import urllib.request
-import zipfile
+from __future__ import annotations
+import logging, os, re, sys, shutil, ssl, subprocess, urllib.parse, urllib.request, zipfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Optional, Tuple
@@ -19,14 +10,90 @@ from typing import Dict, Optional, Tuple
 LOG = logging.getLogger("installer_core")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-# ---------------- Localization (RU/EN) ----------------
+# -------- Language selection (new) --------
+def _prompt_language_choice() -> str:
+    """
+    Interactive language choice.
+    Returns 'ru' or 'en'.
+    Priority:
+      1) ACC_LANG env if already set (respected, no prompt if ACC_LANG_FORCE=1)
+      2) Prompt user: 1=RU, 2=EN, Enter = auto-detect
+      3) Auto-detect fallback (Windows culture or POSIX LANG/LC_ALL)
+    """
+    # If caller wants to force env (for automation), skip prompting
+    if os.environ.get("ACC_LANG_FORCE", "") in ("1", "true", "TRUE", "yes", "y"):
+        lang = os.environ.get("ACC_LANG", "").strip().lower()
+        return "ru" if lang == "ru" else "en"
+
+    existing = os.environ.get("ACC_LANG", "").strip().lower()
+    if existing in ("ru", "en"):
+        return existing
+
+    # Prompt
+    print("Select language / Выберите язык:")
+    print("  1) RU (Русский)")
+    print("  2) EN (English)")
+    choice = input("Choice (1/2, Enter=Auto): ").strip()
+
+    if choice == "1":
+        return "ru"
+    if choice == "2":
+        return "en"
+
+    # Auto-detect
+    try:
+        ps = shutil.which("pwsh") or shutil.which("powershell")
+        if ps:
+            r = subprocess.run(
+                [ps, "-NoProfile", "-NonInteractive", "-Command", "(Get-Culture).Name"],
+                capture_output=True, text=True, timeout=3
+            )
+            culture = (r.stdout or "").strip().lower()
+            if culture.startswith("ru"):
+                return "ru"
+            if culture.startswith("en"):
+                return "en"
+    except Exception:
+        pass
+    loc = (os.environ.get("LANG") or os.environ.get("LC_ALL") or "").lower()
+    if loc.startswith("ru"):
+        return "ru"
+    if loc.startswith("en"):
+        return "en"
+    return "en"
+
 def _detect_lang() -> str:
-    env = os.environ.get("ACC_LANG", "auto").lower()
+    # Called after we possibly set ACC_LANG via prompt
+    env = os.environ.get("ACC_LANG", "").strip().lower()
     if env in ("ru", "en"):
         return env
+    # Fallback to auto
+    try:
+        ps = shutil.which("pwsh") or shutil.which("powershell")
+        if ps:
+            r = subprocess.run(
+                [ps, "-NoProfile", "-NonInteractive", "-Command", "(Get-Culture).Name"],
+                capture_output=True, text=True, timeout=3
+            )
+            culture = (r.stdout or "").strip().lower()
+            if culture.startswith("ru"):
+                return "ru"
+            if culture.startswith("en"):
+                return "en"
+    except Exception:
+        pass
     loc = (os.environ.get("LANG") or os.environ.get("LC_ALL") or "").lower()
-    return "ru" if loc.startswith("ru") else "en"
+    if loc.startswith("ru"):
+        return "ru"
+    if loc.startswith("en"):
+        return "en"
+    return "en"
 
+# Prompt the user once and export ACC_LANG for the session
+_selected_lang = _prompt_language_choice()
+os.environ["ACC_LANG"] = _selected_lang
+
+# -------- Localization --------
 L = _detect_lang()
 T = {
     "ru": {
@@ -55,7 +122,7 @@ T = {
         "wheel_bad": "Wheel несовместим (ожидалось torch {expected}, фактически {actual}). Причина: {why}",
         "download_fail": "Ошибка загрузки: {err}",
         "stop_due_to_torch": "Установка остановлена из‑за несовместимости torch/CUDA.",
-        "report_title": "\nИтоговый отчёт:",
+        "report_title": "\нИтоговый отчёт:",
         "report_line": "- {name}: {status}",
         "status_ok": "успешно",
         "status_fail": "ошибка",
