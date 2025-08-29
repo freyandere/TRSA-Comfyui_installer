@@ -1,5 +1,6 @@
 # installer_core.py (Python 3.11+)
 # Minimal addition: interactive language selector (RU/EN) before localization table is built.
+# Updated for torch 2.8.0 + SageAttention 2.2.0+cu129torch2.8.0.post2
 
 from __future__ import annotations
 import logging, os, re, sys, shutil, ssl, subprocess, urllib.parse, urllib.request, zipfile
@@ -100,7 +101,7 @@ T = {
         "intro": "Старт установки ускорителя ComfyUI (ядро).",
         "checking_torch": "Шаг 1/4: Проверка версий torch/CUDA...",
         "detected_versions": "Обнаружено: torch={torch_ver}, CUDA={cuda_ver}",
-        "target_versions": "Цель: torch=2.7.1 (CUDA 12.8)",
+        "target_versions": "Цель: torch=2.8.0 (CUDA 12.9)",
         "mismatch": "Несовместимость версий: требуется точное соответствие целевым версиям.",
         "single_choice": "Требуется переустановка до целевой версии. Выполнить ПЕРЕУСТАНОВКУ сейчас? (y/N): ",
         "disclaimer_header": "ВНИМАНИЕ: переустановка PyTorch может повлиять на другие пайплайны.",
@@ -122,7 +123,7 @@ T = {
         "wheel_bad": "Wheel несовместим (ожидалось torch {expected}, фактически {actual}). Причина: {why}",
         "download_fail": "Ошибка загрузки: {err}",
         "stop_due_to_torch": "Установка остановлена из‑за несовместимости torch/CUDA.",
-        "report_title": "\нИтоговый отчёт:",
+        "report_title": "\nИтоговый отчёт:",
         "report_line": "- {name}: {status}",
         "status_ok": "успешно",
         "status_fail": "ошибка",
@@ -132,7 +133,7 @@ T = {
         "intro": "Starting ComfyUI accelerator install (core).",
         "checking_torch": "Step 1/4: Checking torch/CUDA versions...",
         "detected_versions": "Detected: torch={torch_ver}, CUDA={cuda_ver}",
-        "target_versions": "Target: torch=2.7.1 (CUDA 12.8)",
+        "target_versions": "Target: torch=2.8.0 (CUDA 12.9)",
         "mismatch": "Version mismatch: exact match to target versions is required.",
         "single_choice": "Reinstall to target version now? (y/N): ",
         "disclaimer_header": "WARNING: reinstalling PyTorch may affect other pipelines.",
@@ -163,19 +164,19 @@ T = {
 }[L]
 
 # ---------------- Pins ----------------
-PYTORCH_MIN = (2, 7, 1)
-PYTORCH_MAX = (2, 7, 1)
-TARGET_TORCH = "2.7.1"
-TARGET_CUDA = "12.8"
-PYTORCH_INDEX_CU128 = "https://download.pytorch.org/whl/cu128"
+PYTORCH_MIN = (2, 8, 0)
+PYTORCH_MAX = (2, 8, 0)
+TARGET_TORCH = "2.8.0"
+TARGET_CUDA = "12.9"
+PYTORCH_INDEX_CU129 = "https://download.pytorch.org/whl/cu129"
 
 @dataclass
 class InstallConfig:
     triton_pin: str = "triton-windows<3.4"
     repo_base: str = "https://github.com/freyandere/TRSA-Comfyui_installer/raw/main"
     include_zip: str = "python_3.12.7_include_libs.zip"
-    sage_wheel_name_urlenc: str = "sageattention-2.2.0%2Bcu128torch2.7.1.post1-cp39-abi3-win_amd64.whl"
-    sage_wheel_local: str = "sageattention-2.2.0+cu128torch2.7.1.post1-cp39-abi3-win_amd64.whl"
+    sage_wheel_name_urlenc: str = "sageattention-2.2.0%2Bcu129torch2.8.0.post2-cp39-abi3-win_amd64.whl"
+    sage_wheel_local: str = "sageattention-2.2.0+cu129torch2.8.0.post2-cp39-abi3-win_amd64.whl"
     max_total_uncompressed: int = 600 * 1024 * 1024  # 600MB safety cap for ZIP bombs
 
 # ---------------- Safe I/O helpers ----------------
@@ -198,7 +199,7 @@ def _ssl_context_with_certifi() -> ssl.SSLContext:
     """
     ctx = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
     try:
-        # Try stdlib’s bundled pip vendor certifi first to avoid extra dependency.
+        # Try stdlib's bundled pip vendor certifi first to avoid extra dependency.
         from pip._vendor import certifi as pip_certifi  # type: ignore
         ctx.load_verify_locations(cafile=pip_certifi.where())
         return ctx
@@ -297,7 +298,7 @@ def safe_extract_zip(zip_path: Path, dest_dir: Path, max_total_uncompressed: int
 class InstallerCore:
     """
     Core installer:
-    - Ensure torch core 2.7.1 (accept '2.7.1+cu128') and CUDA 12.8; single 'reinstall' prompt on mismatch.
+    - Ensure torch core 2.8.0 (accept '2.8.0+cu129') and CUDA 12.9; single 'reinstall' prompt on mismatch.
     - Setup include/libs (safe ZIP extraction).
     - Install Triton 'triton-windows<3.4'.
     - Install SageAttention wheel with platform/ABI checks.
@@ -376,9 +377,9 @@ class InstallerCore:
             print(T["cancelled"])
             return False, "User declined"
 
-        print(T["pip_index"].format(url=PYTORCH_INDEX_CU128))
+        print(T["pip_index"].format(url=PYTORCH_INDEX_CU129))
         print(T["torch_fix_start"].format(ver=TARGET_TORCH, cuda=TARGET_CUDA))
-        ok, out = self._pip("install", f"torch=={TARGET_TORCH}", "--force-reinstall", "--index-url", PYTORCH_INDEX_CU128)
+        ok, out = self._pip("install", f"torch=={TARGET_TORCH}", "--force-reinstall", "--index-url", PYTORCH_INDEX_CU129)
         if not ok:
             return False, T["torch_fix_fail"].format(err=out[-800:])
         print(T["torch_fix_done"])
@@ -420,7 +421,7 @@ class InstallerCore:
     def _validate_wheel(self, wheel_path: Path) -> Tuple[bool, str]:
         """
         Validate platform and torch compatibility for the wheel.
-        Accept torch reported as '2.7.1+cu128' by stripping '+...' for comparison.
+        Accept torch reported as '2.8.0+cu129' by stripping '+...' for comparison.
         """
         name = wheel_path.name.lower()
         py = sys.version_info
@@ -431,7 +432,7 @@ class InstallerCore:
             return False, f"cp tag mismatch (need {cp_tag} or abi3)"
         cur_t, _ = self._current_torch_cuda()
         core = self._strip_local(cur_t)
-        if "cu128" in name and core != TARGET_TORCH:
+        if "cu129" in name and core != TARGET_TORCH:
             return False, f"expected core {TARGET_TORCH}, got {cur_t}"
         return True, "OK"
 
@@ -464,7 +465,7 @@ class InstallerCore:
 def _print_report(results: Dict[str, bool]) -> None:
     print(T["report_title"])
     names = {
-        "torch": "PyTorch (2.7.1+cu128)",
+        "torch": "PyTorch (2.8.0+cu129)",
         "include_libs": "include/libs",
         "triton": "Triton (<3.4)",
         "sageattention": "SageAttention wheel",
