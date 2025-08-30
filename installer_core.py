@@ -175,7 +175,7 @@ class InstallConfig:
     triton_pin: str = "triton-windows<3.4"
     repo_base: str = "https://github.com/freyandere/TRSA-Comfyui_installer/raw/main"
     include_zip: str = "python_3.12.7_include_libs.zip"
-    sage_wheel_name_urlenc: str = "sageattention-2.2.0%2Bcu129torch2.8.0.post2-cp39-abi3-win_amd64.whl"
+    sage_wheel_name_urlenc: str = "sageattention-2.2.0+cu128torch2.8.0.post2-cp39-abi3-win_amd64.whl"
     sage_wheel_local: str = "sageattention-2.2.0+cu129torch2.8.0.post2-cp39-abi3-win_amd64.whl"
     max_total_uncompressed: int = 600 * 1024 * 1024  # 600MB safety cap for ZIP bombs
 
