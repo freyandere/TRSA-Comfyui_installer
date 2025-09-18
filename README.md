@@ -12,7 +12,7 @@
 
 **🚀 Achieve 2‑3× performance boost on Windows systems**
 
-[🔥 Quick Start](#quick-start) • [📋 Features](#features) • [🛠️ Installation](#installation) • [🏆 Performance](#performance) • [🤝 Support](#support)
+[🔥 Quick Start](#quick-start) • [📋 Features](#features) • [🛠️ Installation](#installation) • [🏆 Performance](#Performance-&-Requirements) • [🤝 Support](#support)
 
 </div>
 
@@ -23,16 +23,16 @@
 TRSA (Triton + SageAttention) is a **one‑click installer** that supercharges ComfyUI performance on Windows by integrating cutting‑edge optimization libraries.  
 Perfect for AI artists, developers, and businesses running image generation workflows.
 
-### ✨ Key Benefits
-- **🔥 2‑3× Speed Improvement** – Dramatically faster inference times.
-- **🎯 One‑Click Setup** – No complex configuration required.
-- **🛡️ Safe Installation** – Automatic compatibility checking and rollback.
-- **🌐 Multilingual** – English & Russian interface support.
-- **📦 Portable‑Ready** – Designed for ComfyUI portable installations.
+###  Key Benefits
+- **2‑3× Speed Improvement** – Dramatically faster inference times.
+- **One‑Click Setup** – No complex configuration required.
+- **Safe Installation** – Automatic compatibility checking and rollback.
+- **Multilingual** – English & Russian interface support.
+- **Portable‑Ready** – Designed for ComfyUI portable installations.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 > **Requirements**: Windows 10/11 x64, NVIDIA GPU, ComfyUI portable installation (Python 3.11 or 3.12).
 
@@ -75,15 +75,15 @@ python -c "import triton, sageattention; print('Success!')"
 
 ---
 
-## 📋 Features
+##  Features
 
-### 🔧 Technical Features
+### Technical Features
 - **Triton Integration** – GPU kernel compilation for Windows.
 - **SageAttention 2.2.x** – Quantized attention mechanisms.
 - **CUDA 12.9 Support** – Latest CUDA optimization (cu129).
 - **PyTorch 2.8.0+cu129** – Strict version compatibility.
 
-### 🛠️ Installation Features
+### Installation Features
 - **Smart Detection** – Auto‑detects system configuration and language.
 - **Compatibility Checks** – Prevents incompatible installations.
 - **Progress Tracking** – Clear installation status updates with tqdm (fallback to plain output).
@@ -91,7 +91,7 @@ python -c "import triton, sageattention; print('Success!')"
 - **Error Recovery** – Automatic rollback on failures.
 - **Cleanup** – Temporary files (`include_libs.zip`, wheel) are deleted immediately after use.
 
-### 🌟 User Experience
+### User Experience
 - **Interactive TUI** – Step‑by‑step installation guide.
 - **Multilingual Support** – English & Russian interfaces (environment variables `ACC_LANG_FORCE` and `ACC_LANG`).
 - **Detailed Reports** – Comprehensive installation summaries at the end.
@@ -99,7 +99,7 @@ python -c "import triton, sageattention; print('Success!')"
 
 ---
 
-## 🏆 Performance & Requirements
+## Performance & Requirements
 
 <details>
 <summary><strong>GPU Compatibility Matrix</strong></summary>
@@ -164,7 +164,7 @@ python -c "import triton, sageattention; print('Success!')"
 
 ---
 
-## 🛠️ Installation
+## Installation
 
 ### What Gets Installed
 ```
@@ -225,13 +225,13 @@ python -m pip install torch==2.8.0+cu129 -f https://download.pytorch.org/whl/cu1
 
 ## Getting Help
 
-- **🐛 Bug Reports**: [GitHub Issues](https://github.com/freyandere/TRSA-Comfyui_installer/issues)
-- **💬 Discussions**: [GitHub Discussions](https://github.com/freyandere/TRSA-Comfyui_installer/discussions)
-- **📚 Documentation**: [Project Wiki](https://github.com/freyandere/TRSA-Comfyui_installer/wiki)
+- **Bug Reports**: [GitHub Issues](https://github.com/freyandere/TRSA-Comfyui_installer/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/freyandere/TRSA-Comfyui_installer/discussions)
+- **Documentation**: [Project Wiki](https://github.com/freyandere/TRSA-Comfyui_installer/wiki)
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome contributions! Here's how to get started:
 
@@ -250,7 +250,7 @@ cd TRSA-Comfyui_installer
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 This project stands on the shoulders of giants:
 
@@ -261,13 +261,13 @@ This project stands on the shoulders of giants:
 
 ---
 
-## 📄 License
+##  License
 
 This project is licensed under the **Apache 2.0 License** – see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🌟 Support the Project
+##  Support the Project
 
 If TRSA has accelerated your workflows:
 
@@ -281,15 +281,18 @@ If TRSA has accelerated your workflows:
 
 <div align="center">
 
-### 🔗 Links
+### Links
 
-[🏠 Main Repository](https://github.com/freyandere/TRSA-Comfyui_installer) •  
-[📋 Issues](https://github.com/freyandere/TRSA-Comfyui_installer/issues) •  
-[💬 Discussions](https://github.com/freyandere/TRSA-Comfyui_installer/discussions) •  
-[📖 Wiki](https://github.com/freyandere/TRSA-Comfyui_installer/wiki)
+[Main Repository](https://github.com/freyandere/TRSA-Comfyui_installer) •  
+[Issues](https://github.com/freyandere/TRSA-Comfyui_installer/issues) •  
+[Discussions](https://github.com/freyandere/TRSA-Comfyui_installer/discussions) •  
+[Wiki](https://github.com/freyandere/TRSA-Comfyui_installer/wiki)
 
 **Made with ❤️ for the ComfyUI community**
 
 *Accelerating AI workflows, one installation at a time*
 
 </div>
+```
+
+All emojis have been removed from the link labels and the heading icon. The rest of the README remains unchanged.
