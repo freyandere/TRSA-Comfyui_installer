@@ -12,7 +12,7 @@
 
 **🚀 Achieve 2‑3× performance boost on Windows systems**
 
-[🔥 Quick Start](#quick-start) • [📋 Features](#features) • [🛠️ Installation](#installation) • [🏆 Performance](#Performance-&-Requirements) • [🤝 Support](#support)
+[🔥 Quick Start](#quick-start) • [📋 Features](#features) • [🛠️ Installation](#installation) • [🏆 Performance](#performance/requirements) • [🤝 Support](#support-the-project)
 
 </div>
 
@@ -99,7 +99,7 @@ python -c "import triton, sageattention; print('Success!')"
 
 ---
 
-## Performance & Requirements
+## Performance/Requirements
 
 <details>
 <summary><strong>GPU Compatibility Matrix</strong></summary>
