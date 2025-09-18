@@ -293,4 +293,3 @@ If TRSA has accelerated your workflows:
 *Accelerating AI workflows, one installation at a time*
 
 </div>
-```
