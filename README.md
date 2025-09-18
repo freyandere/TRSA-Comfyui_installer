@@ -99,7 +99,7 @@ python -c "import triton, sageattention; print('Success!')"
 
 ---
 
-## Performance Requirements
+##  Performance Requirements
 
 <details>
 <summary><strong>GPU Compatibility Matrix</strong></summary>
