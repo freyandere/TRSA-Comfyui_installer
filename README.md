@@ -294,5 +294,3 @@ If TRSA has accelerated your workflows:
 
 </div>
 ```
-
-This README now accurately reflects your current installer code and provides clear, collapsible sections that guide users through GPU compatibility, requirements, and performance benchmarks.
