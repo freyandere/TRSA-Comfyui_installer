@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # installer_core.py
-# Flexible CUDA/Torch version installer with user choice
+# Smart version recommendation based on current installation
 
 import logging, os, re, sys, shutil, subprocess, urllib.request, zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 import threading
 import time
 
@@ -99,7 +99,10 @@ T: dict[str, str] = {
         "intro": "🚀 Установщик ускорителя ComfyUI",
         "detected_versions": "Обнаружено: torch={torch_ver}, CUDA={cuda_ver}",
         "select_version": "Выберите версию для установки:",
-        "version_option": "  {idx}) Torch {torch} + CUDA {cuda} {tag}",
+        "version_option": "  {idx}) Torch {torch} + CUDA {cuda} {tags}",
+        "tag_recommended": "⭐ Рекомендуется",
+        "tag_installed": "✓ Установлено",
+        "tag_latest": "🆕 Новейшая",
         "checking_torch": "Шаг 1/4: Проверка текущей установки PyTorch...",
         "confirm_install": "Установить выбранную версию? (y/N): ",
         "disclaimer_header": "ВНИМАНИЕ: переустановка PyTorch может повлиять на другие пайплайны.",
@@ -125,7 +128,10 @@ T: dict[str, str] = {
         "intro": "🚀 ComfyUI Accelerator Installer",
         "detected_versions": "Detected: torch={torch_ver}, CUDA={cuda_ver}",
         "select_version": "Select version to install:",
-        "version_option": "  {idx}) Torch {torch} + CUDA {cuda} {tag}",
+        "version_option": "  {idx}) Torch {torch} + CUDA {cuda} {tags}",
+        "tag_recommended": "⭐ Recommended",
+        "tag_installed": "✓ Installed",
+        "tag_latest": "🆕 Latest",
         "checking_torch": "Step 1/4: Checking current PyTorch installation...",
         "confirm_install": "Install selected version? (y/N): ",
         "disclaimer_header": "WARNING: reinstalling PyTorch may affect other pipelines.",
@@ -164,7 +170,7 @@ class VersionConfig:
     sage_wheel_urlenc: str
     sage_wheel_local: str
     triton_pin: str
-    recommended: bool = False
+    is_latest: bool = False  # Is this the newest version?
 
 # Available version configurations
 VERSIONS = [
@@ -178,7 +184,7 @@ VERSIONS = [
         sage_wheel_urlenc="sageattention-2.2.0%2Bcu128torch2.8.0.post2-cp39-abi3-win_amd64.whl",
         sage_wheel_local="sageattention-2.2.0+cu128torch2.8.0.post2-cp39-abi3-win_amd64.whl",
         triton_pin="triton-windows<3.4",
-        recommended=False  # Stable but not latest
+        is_latest=False
     ),
     VersionConfig(
         name="CUDA 12.10 + Torch 2.9.0",
@@ -190,7 +196,7 @@ VERSIONS = [
         sage_wheel_urlenc="sageattention-2.2.0%2Bcu130torch2.9.0andhigher.post4-cp39-abi3-win_amd64.whl",
         sage_wheel_local="sageattention-2.2.0+cu130torch2.9.0andhigher.post4-cp39-abi3-win_amd64.whl",
         triton_pin="triton-windows<3.5",
-        recommended=True  # Latest
+        is_latest=True
     ),
 ]
 
@@ -208,6 +214,8 @@ class InstallerCore:
         self.cfg = cfg or InstallConfig()
         self.python = python_exe or sys.executable
         self.selected_version: Optional[VersionConfig] = None
+        self.current_torch: str = ""
+        self.current_cuda: str = ""
         
         if not shutil.which(self.python):
             raise FileNotFoundError(f"Python executable not found at: {self.python}")
@@ -230,6 +238,11 @@ class InstallerCore:
 
     def _pip(self, *args: str, timeout: int = 3600) -> Tuple[bool, str]:
         return self._run([self.python, "-m", "pip", *args], timeout=timeout)
+
+    @staticmethod
+    def _strip_local(v: str) -> str:
+        """Strip local version identifier (e.g., '2.8.0+cu129' -> '2.8.0')"""
+        return v.split("+", 1)[0] if v else v
 
     def _current_torch_cuda(self) -> Tuple[str, str]:
         """Get current torch and CUDA versions."""
@@ -260,44 +273,84 @@ print(cuda_ver if cuda_ver else '')
         t.start()
         return stop_event
 
+    def _find_matching_version(self, torch_ver: str, cuda_ver: str) -> Optional[int]:
+        """Find index of version that matches current installation."""
+        if not torch_ver or not cuda_ver:
+            return None
+        
+        clean_torch = self._strip_local(torch_ver)
+        
+        for idx, ver in enumerate(VERSIONS):
+            if ver.torch_version == clean_torch and ver.cuda_version == cuda_ver:
+                return idx
+        
+        return None
+
     # ------------------------------------------------------------------
     # Version selection
     # ------------------------------------------------------------------
     def select_version(self) -> VersionConfig:
-        """Prompt user to select a version."""
+        """Prompt user to select a version with smart recommendations."""
         LOG.info(T["checking_torch"])
         
-        # Show current installation
-        cur_torch, cur_cuda = self._current_torch_cuda()
-        shown_torch = cur_torch or ("not installed" if L == "en" else "не установлен")
-        shown_cuda = cur_cuda or ("unknown" if L == "en" else "неизвестно")
+        # Get current installation
+        self.current_torch, self.current_cuda = self._current_torch_cuda()
+        shown_torch = self.current_torch or ("not installed" if L == "en" else "не установлен")
+        shown_cuda = self.current_cuda or ("unknown" if L == "en" else "неизвестно")
         LOG.info(T["detected_versions"].format(torch_ver=shown_torch, cuda_ver=shown_cuda))
+        
+        # Find matching version
+        current_version_idx = self._find_matching_version(self.current_torch, self.current_cuda)
         
         print("\n" + "="*60)
         print(T["select_version"])
         
-        # Display available versions
-        for idx, ver in enumerate(VERSIONS, 1):
-            tag = "⭐ Recommended" if ver.recommended else ""
-            if L == "ru" and tag:
-                tag = "⭐ Рекомендуется"
+        # Display available versions with smart tags
+        for idx, ver in enumerate(VERSIONS):
+            tags = []
             
+            # Check if this is the currently installed version
+            if current_version_idx == idx:
+                tags.append(T["tag_installed"])
+                default_choice = idx + 1  # Recommend installed version
+            
+            # Mark latest version
+            if ver.is_latest:
+                tags.append(T["tag_latest"])
+            
+            # If nothing installed, recommend latest
+            if current_version_idx is None and ver.is_latest:
+                tags.append(T["tag_recommended"])
+                default_choice = idx + 1
+            
+            # If installed version found, recommend it (keep what works)
+            if current_version_idx is not None and current_version_idx == idx:
+                tags.append(T["tag_recommended"])
+            
+            tag_str = " ".join(tags) if tags else ""
             print(T["version_option"].format(
-                idx=idx,
+                idx=idx + 1,
                 torch=ver.torch_version,
                 cuda=ver.cuda_version,
-                tag=tag
+                tags=tag_str
             ))
         
         print("="*60)
+        
+        # Set default choice
+        if current_version_idx is not None:
+            default_choice = current_version_idx + 1
+        else:
+            # No version installed, default to latest
+            default_choice = len(VERSIONS)  # Last item (latest)
         
         # Get user choice
         while True:
             try:
                 if rich_available and Prompt:
-                    choice = Prompt.ask("Choice", default="2")
+                    choice = Prompt.ask("Choice", default=str(default_choice))
                 else:
-                    choice = input(f"Choice (1-{len(VERSIONS)}, default=2): ").strip() or "2"
+                    choice = input(f"Choice (1-{len(VERSIONS)}, default={default_choice}): ").strip() or str(default_choice)
                 
                 idx = int(choice) - 1
                 if 0 <= idx < len(VERSIONS):
@@ -307,12 +360,12 @@ print(cuda_ver if cuda_ver else '')
                 else:
                     print(f"Please enter a number between 1 and {len(VERSIONS)}")
             except (ValueError, KeyboardInterrupt):
-                print(f"Invalid input. Using recommended version (2).")
-                self.selected_version = VERSIONS[1]  # Default to latest
+                print(f"Invalid input. Using default choice ({default_choice}).")
+                self.selected_version = VERSIONS[default_choice - 1]
                 return self.selected_version
 
     # ------------------------------------------------------------------
-    # Installation steps
+    # Installation steps (unchanged from previous version)
     # ------------------------------------------------------------------
     def install_pytorch(self, version: VersionConfig) -> Tuple[bool, str]:
         """Install PyTorch with specified version."""
@@ -329,7 +382,6 @@ print(cuda_ver if cuda_ver else '')
             
             LOG.info(T["installing_pytorch"].format(ver=version.torch_version, cuda=version.cuda_version))
             
-            cuda_tag = version.cuda_version.replace(".", "")
             packages = [
                 f"torch=={version.torch_version}",
                 f"torchvision=={version.torchvision_version}",
