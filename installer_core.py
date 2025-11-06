@@ -174,7 +174,7 @@ def _torch_and_cuda() -> Tuple[Optional[str], Optional[str]]:
 # 7. Wheel mapping – supported combos                                       #
 # --------------------------------------------------------------------------- #
 REPO_BASE = (
-    "https://github.com/freyandere/TRSA-Comfyui_installer/raw/main"
+    "https://github.com/freyandere/TRSA-Comfyui_installer/raw/Dev"
 )
 
 WHEEL_MAP: dict[Tuple[str, str], str] = {
