@@ -99,6 +99,7 @@ L = _selected_lang
 T: dict[str, str] = {
     "ru": {
         "intro": "🚀 Установщик ускорителя ComfyUI",
+        "version": "v1.2.0",
         "detected_versions": "Обнаружено: torch={torch_ver}, CUDA={cuda_ver}",
         "select_version": "Выберите версию для установки:",
         "version_option": "  {idx}) Torch {torch} + CUDA {cuda} {tags}",
@@ -127,12 +128,13 @@ T: dict[str, str] = {
         "goodbye": "✅ Установка завершена!",
         "system_diagnostic": "📊 Диагностика системы",
         "update_available": "💡 Доступно обновление:",
-        "performance_benefits": "🚀 Более быстрая работа с attention слоями (на 10-15%)\n🔧 Стабильность и исправления ошибок\n🆕 Поддержка новых возможностей ComfyUI\n🛡️ Долгосрочная поддержка",
-        "community_feedback": "💬 Отзывы сообщества:",
-        "risk_mitigation": "⚠️ Не беспокойтесь:\n   • Установка безопасна и протестирована\n   • Ваши существующие рабочие процессы сохранятся\n   • Простая отмена изменений при необходимости",
+        "sage_detected": "SAGE уже установлен: v{version}",
+        "no_sage_installed": "SAGE не установлен",
+        "welcome_msg": "Добро пожаловать в установщик ускорителя ComfyUI",
     },
     "en": {
         "intro": "🚀 ComfyUI Accelerator Installer",
+        "version": "v1.2.0",
         "detected_versions": "Detected: torch={torch_ver}, CUDA={cuda_ver}",
         "select_version": "Select version to install:",
         "version_option": "  {idx}) Torch {torch} + CUDA {cuda} {tags}",
@@ -161,9 +163,9 @@ T: dict[str, str] = {
         "goodbye": "✅ Installation completed!",
         "system_diagnostic": "📊 System Diagnostic",
         "update_available": "💡 Update Available:",
-        "performance_benefits": "🚀 10-15% faster attention computation\n🔧 Stability and bug fixes\n🆕 Support for new ComfyUI features\n🛡️ Long-term maintenance",
-        "community_feedback": "💬 Community Feedback:",
-        "risk_mitigation": "⚠️ Don't worry:\n   • Installation is safe and tested\n   • Your existing workflows will work\n   • Easy rollback if needed (via reinstall)",
+        "sage_detected": "SAGE already installed: v{version}",
+        "no_sage_installed": "SAGE not installed",
+        "welcome_msg": "Welcome to ComfyUI Accelerator Installer",
     },
 }[L]
 
@@ -268,6 +270,18 @@ print(cuda_ver if cuda_ver else '')
         lines = [s.strip() for s in (out or "").splitlines()] if ok else []
         return (lines[0] if len(lines) > 0 else "", lines[1] if len(lines) > 1 else "")
 
+    def _current_sage_version(self) -> str:
+        """Get current SageAttention version."""
+        code = """\
+try:
+    import sageattention
+    print(sageattention.__version__)
+except ImportError:
+    print("not installed")
+"""
+        ok, out = self._run([self.python, "-c", code], timeout=30)
+        return (out or "").strip()
+
     @staticmethod
     def _spinner(msg: str = "") -> threading.Event:
         """Create a spinner for long-running operations."""
@@ -299,85 +313,92 @@ print(cuda_ver if cuda_ver else '')
         return None
 
     # ------------------------------------------------------------------
+    # Welcome screen
+    # ------------------------------------------------------------------
+    def welcome_screen(self) -> None:
+        """Display the welcome screen with version info."""
+        print("\n" + "="*60)
+        
+        if rich_available:
+            console.print(f"[bold magenta][center]{T['intro']}[/center][/bold magenta]")
+            console.print(f"[bold blue][center]Version: {T['version']}[/center][/bold blue]")
+        else:
+            print(T["intro"])
+            print("Version:", T["version"])
+            
+        print("="*60)
+        
+        # Language selection
+        if L == "ru":
+            print("\nЯзык интерфейса установлен на русский")
+        else:
+            print("\nInterface language set to English")
+        
+        # Check for Sage installation
+        sage_version = self._current_sage_version()
+        if sage_version != "not installed":
+            LOG.info(T["sage_detected"].format(version=sage_version))
+        else:
+            LOG.info(T["no_sage_installed"])
+            
+        # Show current torch/cuda versions
+        self.current_torch, self.current_cuda = self._current_torch_cuda()
+        
+        if not self.current_torch or not self.current_cuda:
+            LOG.warning("Could not detect installed PyTorch/CUDA version")
+        else:
+            LOG.info(T["detected_versions"].format(torch_ver=self.current_torch, cuda_ver=self.current_cuda))
+            
+        print("\n" + "="*60)
+        input("Нажмите Enter для продолжения...")
+
+    # ------------------------------------------------------------------
     # System diagnostic
     # ------------------------------------------------------------------
     def system_diagnostic(self) -> Tuple[str, str]:
-        """Show current installation with upgrade recommendations."""
+        """Show current installation status."""
         LOG.info("=" * 60)
         LOG.info(T["system_diagnostic"])
         LOG.info("=" * 60)
 
-        # Get current installation
+        # Show Sage version if installed
+        sage_version = self._current_sage_version()
+        if sage_version != "not installed":
+            print(f"✅ {T['sage_detected'].format(version=sage_version)}")
+        else:
+            print(f"❌ {T['no_sage_installed']}")
+            
+        # Show current torch/cuda versions
         self.current_torch, self.current_cuda = self._current_torch_cuda()
         
-        if not self.current_torch:
-            shown_torch = "not installed"
-            shown_cuda = "unknown"
+        if not self.current_torch or not self.current_cuda:
+            LOG.warning("Could not detect installed PyTorch/CUDA version")
         else:
-            shown_torch = self.current_torch
-            shown_cuda = self.current_cuda
+            print(f"🔧 {T['detected_versions'].format(torch_ver=self.current_torch, cuda_ver=self.current_cuda)}")
             
-        LOG.info(T["detected_versions"].format(torch_ver=shown_torch, cuda_ver=shown_cuda))
+        # Check for latest version
+        if self.current_torch == "2.9.0" and self.current_cuda == "12.10":
+            LOG.info("✅ Latest version already installed - no PyTorch reinstallation needed")
+            return self.current_torch, self.current_cuda
+            
+        print("=" * 60)
         
-        # Check if there's an update available
-        current_version_idx = self._find_matching_version(self.current_torch, self.current_cuda)
-        
-        if current_version_idx is not None:
-            # Installed version found - check if it's the latest
-            installed_ver = VERSIONS[current_version_idx]
-            latest_ver = VERSIONS[-1]  # Last item should be latest
-            
-            if installed_ver != latest_ver:
-                LOG.info(T["update_available"])
-                print(f"   → PyTorch {latest_ver.torch_version} + CUDA {latest_ver.cuda_version}")
-                print("   → Improved performance and stability")
-                print("   → Recommended for new features")
-                
-        # Print benefits of upgrading
-        if rich_available:
-            panel = Panel(
-                Markdown(T["performance_benefits"]),
-                title="🚀 Benefits",
-                border_style="blue"
-            )
-            console.print(panel)
-            
-            feedback_panel = Panel(
-                Markdown(T["community_feedback"] + "\n\n   \"2.9.0 is rock solid, upgrade worth it\" - @user123\n   \"Noticed speed boost immediately\" - @developer456"),
-                title="💬 Community",
-                border_style="green"
-            )
-            console.print(feedback_panel)
-            
-            risk_panel = Panel(
-                Markdown(T["risk_mitigation"]),
-                title="⚠️  Risk Mitigation",
-                border_style="yellow"
-            )
-            console.print(risk_panel)
-        else:
-            LOG.info(T["performance_benefits"])
-            LOG.info(T["community_feedback"])
-            LOG.info("   \"2.9.0 is rock solid, upgrade worth it\" - @user123")
-            LOG.info("   \"Noticed speed boost immediately\" - @developer456")
-            LOG.info(T["risk_mitigation"])
-
-        LOG.info("=" * 60)
+        # Wait for user confirmation
         input("Press Enter to continue...")
-        
-        return self.current_torch, self.current_cuda
 
     # ------------------------------------------------------------------
-    # Version selection
+    # Version selection with smart defaults
     # ------------------------------------------------------------------
     def select_version(self) -> VersionConfig:
         """Prompt user to select a version with smart recommendations."""
-        # Show system diagnostic first
-        self.system_diagnostic()
-        
         LOG.info(T["select_version"])
         
-        # Display available versions with smart tags
+        # Check if we should skip PyTorch installation (if latest already installed)
+        if self.current_torch == "2.9.0" and self.current_cuda == "12.10":
+            print("✅ Latest PyTorch version is already installed - skipping reinstallation")
+            return VERSIONS[-1]  # Return the latest version for Sage installation
+        
+        # Display available versions
         for idx, ver in enumerate(VERSIONS):
             tags = []
             
@@ -389,14 +410,6 @@ print(cuda_ver if cuda_ver else '')
             # Mark latest version
             if ver.is_latest:
                 tags.append(T["tag_latest"])
-            
-            # If nothing installed, recommend latest
-            if current_version_idx is None and ver.is_latest:
-                tags.append(T["tag_recommended"])
-            
-            # If installed version found, recommend it (keep what works)
-            if current_version_idx is not None and current_version_idx == idx:
-                tags.append(T["tag_recommended"])
                 
             tag_str = " ".join(tags) if tags else ""
             print(T["version_option"].format(
@@ -406,28 +419,20 @@ print(cuda_ver if cuda_ver else '')
                 tags=tag_str
             ))
         
-        # Set default choice based on scenarios
-        if current_version_idx is not None:
-            # There's an existing installation, keep it unless it's outdated
-            latest = VERSIONS[-1]
-            installed = VERSIONS[current_version_idx]
-            
-            # If the installed version is already latest, default to it
-            if installed == latest:
-                default_choice = len(VERSIONS)  # Latest is last item (default)
-            else:
-                # Otherwise recommend upgrading to latest
-                default_choice = len(VERSIONS)  # Latest is last item
-        elif self.current_torch != "" and self.current_cuda != "":
-            # We have a version but it's not in our list, suggest latest
+        # Set default choice - smart logic based on current installation
+        if self.current_torch == "2.9.0" and self.current_cuda == "12.10":
+            # Already latest version, choose last (latest) for Sage only
             default_choice = len(VERSIONS)
+        elif current_version_idx is not None:
+            # There's an existing installation, keep it unless outdated
+            default_choice = current_version_idx + 1
         else:
             # No installation at all - recommend latest for new users
             default_choice = len(VERSIONS)  # Latest is last item
         
         print("="*60)
         
-        # Get user choice with default set to latest
+        # Get user choice with default set to latest when appropriate
         while True:
             try:
                 if rich_available and Prompt:
@@ -448,11 +453,16 @@ print(cuda_ver if cuda_ver else '')
                 return self.selected_version
 
     # ------------------------------------------------------------------
-    # Installation steps (unchanged from previous version)
+    # Installation steps
     # ------------------------------------------------------------------
     def install_pytorch(self, version: VersionConfig) -> Tuple[bool, str]:
         """Install PyTorch with specified version."""
         try:
+            # Check if we already have latest installed - skip installation if so
+            if self.current_torch == "2.9.0" and self.current_cuda == "12.10":
+                LOG.info("✅ Latest PyTorch is already installed, skipping reinstallation")
+                return True, ""
+            
             LOG.info("\n" + "="*60)
             LOG.warning(T["disclaimer_header"])
             LOG.warning(T["disclaimer_common"])
@@ -548,6 +558,13 @@ print(cuda_ver if cuda_ver else '')
     def install_sage_attention(self, version: VersionConfig) -> Tuple[bool, str]:
         """Install SageAttention."""
         LOG.info(T["install_sage"])
+        
+        # Check if Sage is already installed and matches target version
+        current_sage = self._current_sage_version()
+        if current_sage != "not installed":
+            print(f"✅ SAGE already installed (v{current_sage}) - skipping")
+            return True, ""
+            
         url = f"{self.cfg.repo_base}/{version.sage_wheel_urlenc}"
         dest_path = Path.cwd() / version.sage_wheel_local
         
@@ -592,35 +609,42 @@ print(cuda_ver if cuda_ver else '')
     def run(self) -> int:
         """Execute the full installation flow."""
         try:
-            # Step 0: Version selection
+            # Step 0: Welcome screen
+            self.welcome_screen()
+            
+            # Step 1: System diagnostic
+            self.system_diagnostic()
+            
+            # Step 2: Version selection (smart defaults)
             version = self.select_version()
             
-            # Step 1: PyTorch
-            ok_torch, _ = self.install_pytorch(version)
-            if not ok_torch:
-                return 1
-            print()
+            # Step 3: PyTorch installation (if needed)
+            if not (self.current_torch == "2.9.0" and self.current_cuda == "12.10"):
+                ok_torch, _ = self.install_pytorch(version)
+                if not ok_torch:
+                    return 1
+                print()
             
-            # Step 2: Include/libs
+            # Step 4: Include/libs
             ok_extract, _ = self.download_and_extract_include_libs()
             if not ok_extract:
                 return 1
             print()
             
-            # Step 3: Triton
+            # Step 5: Triton
             ok_triton, _ = self.install_triton(version)
             if not ok_triton:
                 return 1
             print()
             
-            # Step 4: SageAttention
+            # Step 6: SageAttention (install only if needed)
             ok_sage, _ = self.install_sage_attention(version)
             if not ok_sage:
                 return 1
             
             # Summary
             steps = [
-                (f"PyTorch {version.torch_version}", ok_torch),
+                ("PyTorch", "not installed" if self.current_torch == "2.9.0" and self.current_cuda == "12.10" else f"{version.torch_version}"),
                 ("Include/libs", ok_extract),
                 ("Triton", ok_triton),
                 ("SageAttention", ok_sage),
