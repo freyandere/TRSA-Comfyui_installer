@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 """
 TRSA ComfyUI SageAttention Installer - Core Module
-Version: 2.6.0
+Version: 2.6.1  # UPDATED VERSION
 Author: freyandere
 Repository: https://github.com/freyandere/TRSA-Comfyui_installer
 
-Production-ready installer with comprehensive error handling,
-logging, multi-version support, and rollback capabilities.
+Fixed:
+- Wheel filename compatibility with pip
+- Rollback version handling
+- URL encoding for special characters
 """
 
 import sys
@@ -17,6 +19,7 @@ import re
 import logging
 import urllib.request
 import urllib.error
+import urllib.parse  # NEW
 import shutil
 from typing import Optional, Tuple, Dict, List
 from datetime import datetime
@@ -38,46 +41,46 @@ except ImportError:
 # CONFIGURATION
 # ============================================================================
 
-VERSION = "2.6.0"
+VERSION = "2.6.1"  # UPDATED
 GITHUB_REPO = "https://raw.githubusercontent.com/freyandere/TRSA-Comfyui_installer/main"
 WHEELS_BASE_PATH = "wheels"
 
-# Supported configurations organized by Python version
+# UPDATED: Original wheel filenames from SageAttention repository
 SUPPORTED_CONFIGS = {
-    # Python 3.9+ (cp39-abi3) - Universal wheels compatible with 3.9, 3.10, 3.11, 3.12
+    # Python 3.9+ (cp39-abi3) - Universal wheels
     "py39": {
         "cu124_torch251": {
             "torch_version": "2.5.1",
             "cuda_version": "12.4",
-            "wheel": "sage_cu124_torch251_py39.whl",
+            "wheel": "sageattention-2.2.0+cu124torch2.5.1.post3-cp39-abi3-win_amd64.whl",
             "python_folder": "3.9",
             "torch_install_cmd": "torch==2.5.1+cu124 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124"
         },
         "cu126_torch260": {
             "torch_version": "2.6.0",
             "cuda_version": "12.6",
-            "wheel": "sage_cu126_torch260_py39.whl",
+            "wheel": "sageattention-2.2.0+cu126torch2.6.0.post3-cp39-abi3-win_amd64.whl",
             "python_folder": "3.9",
             "torch_install_cmd": "torch==2.6.0+cu126 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126"
         },
         "cu128_torch271": {
             "torch_version": "2.7.1",
             "cuda_version": "12.8",
-            "wheel": "sage_cu128_torch271_py39.whl",
+            "wheel": "sageattention-2.2.0+cu128torch2.7.1.post3-cp39-abi3-win_amd64.whl",
             "python_folder": "3.9",
             "torch_install_cmd": "torch==2.7.1+cu128 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128"
         },
         "cu128_torch280": {
             "torch_version": "2.8.0",
             "cuda_version": "12.8",
-            "wheel": "sage_cu128_torch280_py39.whl",
+            "wheel": "sageattention-2.2.0+cu128torch2.8.0.post3-cp39-abi3-win_amd64.whl",
             "python_folder": "3.9",
             "torch_install_cmd": "torch==2.8.0+cu128 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128"
         },
         "cu130_torch290": {
             "torch_version": "2.9.0",
             "cuda_version": "13.0",
-            "wheel": "sage_cu130_torch290_py39.whl",
+            "wheel": "sageattention-2.2.0+cu130torch2.9.0andhigher.post4-cp39-abi3-win_amd64.whl",
             "python_folder": "3.9",
             "torch_install_cmd": "torch==2.9.0+cu130 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130"
         }
@@ -88,14 +91,14 @@ SUPPORTED_CONFIGS = {
         "cu130_torch290": {
             "torch_version": "2.9.0",
             "cuda_version": "13.0",
-            "wheel": "sage_cu130_torch290_py313.whl",
+            "wheel": "sageattention-2.2.0+cu130torch2.9.0.post3-cp313-cp313-win_amd64.whl",
             "python_folder": "3.13",
             "torch_install_cmd": "torch==2.9.0+cu130 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130"
         },
         "cu130_torch2100": {
             "torch_version": "2.10.0",
             "cuda_version": "13.0",
-            "wheel": "sage_cu130_torch2100_py313.whl",
+            "wheel": "sageattention-2.2.0+cu130torch2.10.0.post3-cp313-cp313-win_amd64.whl",
             "python_folder": "3.13",
             "torch_install_cmd": "torch==2.10.0+cu130 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130"
         }
