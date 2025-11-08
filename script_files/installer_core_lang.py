@@ -53,6 +53,14 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "torch_upgrade_prompt": "Would you like to upgrade PyTorch? [Y/n]: ",
         "torch_upgrade_yes": "Starting PyTorch upgrade process...",
         "torch_upgrade_skip": "Skipping PyTorch upgrade. Continuing with current version.",
+        "triton_title": "\nTriton Installation (Optional)",
+        "triton_prompt": "Install Triton optimization? [Y/n]: ",
+        "triton_installing": "Installing Triton...",
+        "triton_success": "✓ Triton installed successfully",
+        "triton_failed": "✗ Triton installation failed (non-critical)",
+        "triton_skipped": "Triton installation skipped",
+        "cleanup_removing_package": "Removing {package}...",
+        "error_disk_space": "ERROR: Insufficient disk space ({free} MB free, {required} MB required)",
         
         # ====================================================================
         # INSTALLATION
@@ -166,7 +174,14 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "torch_upgrade_prompt": "Хотите обновить PyTorch? [Y/n]: ",
         "torch_upgrade_yes": "Начинается процесс обновления PyTorch...",
         "torch_upgrade_skip": "Обновление PyTorch пропущено. Продолжаем с текущей версией.",
-        
+        "triton_title": "\nУстановка Triton (Опционально)",
+        "triton_prompt": "Установить оптимизацию Triton? [Y/n]: ",
+        "triton_installing": "Установка Triton...",
+        "triton_success": "✓ Triton успешно установлен",
+        "triton_failed": "✗ Установка Triton не удалась (некритично)",
+        "triton_skipped": "Установка Triton пропущена",
+        "cleanup_removing_package": "Удаление {package}...",
+        "error_disk_space": "ОШИБКА: Недостаточно места ({free} МБ свободно, требуется {required} МБ)",
         # ====================================================================
         # INSTALLATION
         # ====================================================================
