@@ -672,47 +672,46 @@ class TRSAInstaller:
                 self.logger.error(f"Triton error (pip): {e}")
                 return False
 
-    # Для остальных версий Python — старая схема через wheel с GitHub
-    if py_key not in TRITON_VERSIONS:
-        self.logger.debug(f"No Triton mapping for {py_key}")
-        print(self.t("triton_skipped"))
-        return False
+        # Для остальных версий Python — старая схема через wheel с GitHub
+        if py_key not in TRITON_VERSIONS:
+            self.logger.debug(f"No Triton mapping for {py_key}")
+            print(self.t("triton_skipped"))
+            return False
 
-    try:
-        url = f"{TRITON_BASE_URL}/{TRITON_VERSIONS[py_key]}"
-        filename = url.split("/")[-1]
+        try:
+            url = f"{TRITON_BASE_URL}/{TRITON_VERSIONS[py_key]}"
+            filename = url.split("/")[-1]
 
-        print(self.t("install_downloading", file=filename))
-        self.logger.info(f"Downloading Triton: {url}")
+            print(self.t("install_downloading", file=filename))
+            self.logger.info(f"Downloading Triton: {url}")
 
-        urllib.request.urlretrieve(url, filename)
-        self.temp_files.append(Path(filename))
+            urllib.request.urlretrieve(url, filename)
+            self.temp_files.append(Path(filename))
 
-        print(self.t("triton_installing"))
-        result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", filename],
-            capture_output=True,
-            timeout=120,
-        )
+            print(self.t("triton_installing"))
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", filename],
+                capture_output=True,
+                timeout=120,
+            )
 
-        if result.returncode == 0:
-            print(self.t("triton_success"))
-            self.logger.info("Triton installed from wheel")
-            return True
+            if result.returncode == 0:
+                print(self.t("triton_success"))
+                self.logger.info("Triton installed from wheel")
+                return True
 
-        print(self.t("triton_failed"))
-        self.logger.error(f"Triton failed: {result.stderr[:200]}")
-        return False
-    except Exception as e:
-        print(self.t("triton_failed"))
-        import traceback
-        self.logger.error(f"Triton error: {e}\n{traceback.format_exc()}")
-        return False
-
+            print(self.t("triton_failed"))
+            self.logger.error(f"Triton failed: {result.stderr[:200]}")
+            return False
+        except Exception as e:
+            print(self.t("triton_failed"))
+            import traceback
+            self.logger.error(f"Triton error: {e}\n{traceback.format_exc()}")
+            return False
 
     # ========================================================================
     # SAGEATTENTION
-    # ========================================================================
+    # =========================================================================
 
     def select_wheel_config(self) -> Optional[Dict[str, str]]:
         if not self.system_info:
