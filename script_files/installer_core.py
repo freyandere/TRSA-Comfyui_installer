@@ -627,6 +627,10 @@ class TRSAInstaller:
 
     def install_triton(self) -> bool:
         """Install Triton (optional)."""
+        if self.system_info is None:
+            print(self.t("error_system_info_not_set"))
+            self.logger.error("System info not set. Run system check first.")
+            return False
         py_major, py_minor, _ = self.system_info.python_tuple
         py_key = f"py{py_major}{py_minor}"
 
@@ -668,7 +672,7 @@ class TRSAInstaller:
                 self.logger.error(f"Triton error (pip): {e}")
                 return False
 
-        # Для остальных версий Python — старая схема через wheel с GitHub
+    # Для остальных версий Python — старая схема через wheel с GitHub
     if py_key not in TRITON_VERSIONS:
         self.logger.debug(f"No Triton mapping for {py_key}")
         print(self.t("triton_skipped"))
@@ -686,7 +690,7 @@ class TRSAInstaller:
 
         print(self.t("triton_installing"))
         result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--force-reinstall", filename],
+            [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", filename],
             capture_output=True,
             timeout=120,
         )
@@ -701,7 +705,8 @@ class TRSAInstaller:
         return False
     except Exception as e:
         print(self.t("triton_failed"))
-        self.logger.error(f"Triton error: {e}")
+        import traceback
+        self.logger.error(f"Triton error: {e}\n{traceback.format_exc()}")
         return False
 
 
