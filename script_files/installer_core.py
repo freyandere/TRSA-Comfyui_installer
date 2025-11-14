@@ -84,14 +84,14 @@ SUPPORTED_CONFIGS: Dict[str, Dict[str, Dict[str, str]]] = {
         "cu124_torch251": {
             "torch_version": "2.5.1",
             "cuda_version": "12.4",
-            "wheel": "sageattention-2.2.0+cu124torch2.5.1.post3-cp39-abi3-win_amd64.whl",
+            "wheel": "sageattention-2.2.0+cu124torch2.5.1.post2-cp39-abi3-win_amd64.whl",
             "python_folder": "3.9",
             "torch_install_cmd": "torch==2.5.1+cu124 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124",  # noqa: E501
         },
         "cu126_torch260": {
             "torch_version": "2.6.0",
             "cuda_version": "12.6",
-            "wheel": "sageattention-2.2.0+cu126torch2.6.0.post3-cp39-abi3-win_amd64.whl",
+            "wheel": "sageattention-2.2.0+cu126torch2.6.0.post2-cp39-abi3-win_amd64.whl",
             "python_folder": "3.9",
             "torch_install_cmd": "torch==2.6.0+cu126 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126",  # noqa: E501
         },
@@ -123,7 +123,7 @@ SUPPORTED_CONFIGS: Dict[str, Dict[str, Dict[str, str]]] = {
         "cu130_torch290": {
             "torch_version": "2.9.0",
             "cuda_version": "13.0",
-            "wheel": "sageattention-2.2.0+cu130torch2.9.0.post3-cp313-cp313-win_amd64.whl",
+            "wheel": "sageattention-2.2.0.post3%2Bcu130torch2.9.0-cp313-cp313-win_amd64.whl",
             "python_folder": "3.13",
             "torch_install_cmd": "torch==2.9.0+cu130 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130",  # noqa: E501
             "boost": "+25% speed",
@@ -131,7 +131,7 @@ SUPPORTED_CONFIGS: Dict[str, Dict[str, Dict[str, str]]] = {
         "cu130_torch2100": {
             "torch_version": "2.10.0",
             "cuda_version": "13.0",
-            "wheel": "sageattention-2.2.0+cu130torch2.10.0.post3-cp313-cp313-win_amd64.whl",
+            "wheel": "sageattention-2.2.0.post3%2Bcu130torch2.10.0-cp313-cp313-win_amd64.whl",
             "python_folder": "3.13",
             "torch_install_cmd": "torch==2.10.0+cu130 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130",  # noqa: E501
             "boost": "+30% latest",
