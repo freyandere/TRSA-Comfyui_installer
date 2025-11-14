@@ -17,7 +17,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "welcome_title": "TRSA ComfyUI SageAttention Installer",
         "welcome_version": "Version: {version}",
         "welcome_separator": "=" * 70,
-        
+
         # ====================================================================
         # LANGUAGE SELECTION
         # ====================================================================
@@ -28,7 +28,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "lang_choice_prompt": "Your choice: ",
         "lang_invalid": "Invalid choice. Using system default language.",
         "lang_selected": "Language selected: English",
-        
+
         # ====================================================================
         # SYSTEM CHECK
         # ====================================================================
@@ -42,7 +42,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "check_upgrade_needed": "⚠ Upgrade recommended for optimal performance",
         "check_current_config": "Current: PyTorch {torch}, CUDA {cuda}",
         "check_target_config": "Recommended: PyTorch {torch}, CUDA {cuda}",
-        
+
         # ====================================================================
         # PYTORCH UPGRADE
         # ====================================================================
@@ -53,6 +53,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "torch_upgrade_prompt": "Would you like to upgrade PyTorch? [Y/n]: ",
         "torch_upgrade_yes": "Starting PyTorch upgrade process...",
         "torch_upgrade_skip": "Skipping PyTorch upgrade. Continuing with current version.",
+        "torch_upgrade_continue": "Continuing with current PyTorch version after upgrade failure.",
         "triton_title": "\nTriton Installation (Optional)",
         "triton_prompt": "Install Triton optimization? [Y/n]: ",
         "triton_installing": "Installing Triton...",
@@ -61,7 +62,8 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "triton_skipped": "Triton installation skipped",
         "cleanup_removing_package": "Removing {package}...",
         "error_disk_space": "ERROR: Insufficient disk space ({free} MB free, {required} MB required)",
-        
+        "error_torch_disk_space": "ERROR: Not enough disk space for PyTorch upgrade (requires about 3 GB).",
+
         # ====================================================================
         # INSTALLATION
         # ====================================================================
@@ -75,7 +77,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "install_success": "✓ SageAttention installed successfully!",
         "install_failed": "✗ Installation failed",
         "install_torch_upgrading": "Upgrading PyTorch to version {version}...",
-        
+
         # ====================================================================
         # ROLLBACK
         # ====================================================================
@@ -85,7 +87,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "rollback_success": "✓ Successfully restored previous version",
         "rollback_failed": "✗ Rollback failed",
         "rollback_skipped": "Rollback skipped by user",
-        
+
         # ====================================================================
         # SUMMARY
         # ====================================================================
@@ -103,7 +105,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "summary_next_step_1": "1. Restart ComfyUI",
         "summary_next_step_2": "2. SageAttention will be automatically used",
         "summary_next_step_3": "3. Check the log file if you encounter issues",
-        
+
         # ====================================================================
         # ERRORS
         # ====================================================================
@@ -115,14 +117,14 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "error_download_failed": "ERROR: Failed to download {file}",
         "error_install_failed": "ERROR: Installation failed - {reason}",
         "error_permission": "ERROR: Permission denied. Try running as administrator.",
-        
+
         # ====================================================================
         # CLEANUP
         # ====================================================================
         "cleanup_title": "\nCleanup",
         "cleanup_removing": "Removing temporary files...",
         "cleanup_success": "✓ Cleanup completed",
-        
+
         # ====================================================================
         # PROMPTS
         # ====================================================================
@@ -130,7 +132,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "confirm_yes": "Y",
         "confirm_no": "n",
     },
-    
+
     "ru": {
         # ====================================================================
         # WELCOME SCREEN
@@ -138,7 +140,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "welcome_title": "TRSA ComfyUI SageAttention Установщик",
         "welcome_version": "Версия: {version}",
         "welcome_separator": "=" * 70,
-        
+
         # ====================================================================
         # LANGUAGE SELECTION
         # ====================================================================
@@ -149,7 +151,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "lang_choice_prompt": "Ваш выбор: ",
         "lang_invalid": "Неверный выбор. Используется системный язык.",
         "lang_selected": "Выбран язык: Русский",
-        
+
         # ====================================================================
         # SYSTEM CHECK
         # ====================================================================
@@ -163,7 +165,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "check_upgrade_needed": "⚠ Рекомендуется обновление для оптимальной производительности",
         "check_current_config": "Текущая: PyTorch {torch}, CUDA {cuda}",
         "check_target_config": "Рекомендуется: PyTorch {torch}, CUDA {cuda}",
-        
+
         # ====================================================================
         # PYTORCH UPGRADE
         # ====================================================================
@@ -174,6 +176,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "torch_upgrade_prompt": "Хотите обновить PyTorch? [Y/n]: ",
         "torch_upgrade_yes": "Начинается процесс обновления PyTorch...",
         "torch_upgrade_skip": "Обновление PyTorch пропущено. Продолжаем с текущей версией.",
+        "torch_upgrade_continue": "Продолжаем с текущей версией PyTorch после неудачного обновления.",
         "triton_title": "\nУстановка Triton (Опционально)",
         "triton_prompt": "Установить оптимизацию Triton? [Y/n]: ",
         "triton_installing": "Установка Triton...",
@@ -182,6 +185,8 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "triton_skipped": "Установка Triton пропущена",
         "cleanup_removing_package": "Удаление {package}...",
         "error_disk_space": "ОШИБКА: Недостаточно места ({free} МБ свободно, требуется {required} МБ)",
+        "error_torch_disk_space": "ОШИБКА: Недостаточно места для обновления PyTorch (требуется около 3 ГБ).",
+
         # ====================================================================
         # INSTALLATION
         # ====================================================================
@@ -195,7 +200,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "install_success": "✓ SageAttention успешно установлен!",
         "install_failed": "✗ Установка не удалась",
         "install_torch_upgrading": "Обновление PyTorch до версии {version}...",
-        
+
         # ====================================================================
         # ROLLBACK
         # ====================================================================
@@ -205,7 +210,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "rollback_success": "✓ Предыдущая версия успешно восстановлена",
         "rollback_failed": "✗ Откат не удался",
         "rollback_skipped": "Откат пропущен пользователем",
-        
+
         # ====================================================================
         # SUMMARY
         # ====================================================================
@@ -223,7 +228,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "summary_next_step_1": "1. Перезапустите ComfyUI",
         "summary_next_step_2": "2. SageAttention будет использоваться автоматически",
         "summary_next_step_3": "3. Проверьте лог-файл при возникновении проблем",
-        
+
         # ====================================================================
         # ERRORS
         # ====================================================================
@@ -235,45 +240,29 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "error_download_failed": "ОШИБКА: Не удалось загрузить {file}",
         "error_install_failed": "ОШИБКА: Установка не удалась - {reason}",
         "error_permission": "ОШИБКА: Доступ запрещён. Попробуйте запустить от имени администратора.",
-        
+
         # ====================================================================
         # CLEANUP
         # ====================================================================
         "cleanup_title": "\nОчистка",
         "cleanup_removing": "Удаление временных файлов...",
         "cleanup_success": "✓ Очистка завершена",
-        
+
         # ====================================================================
         # PROMPTS
         # ====================================================================
         "press_enter": "\nНажмите Enter для выхода...",
         "confirm_yes": "Y",
         "confirm_no": "n",
-    }
+    },
 }
 
 
-def get_text(lang: str, key: str, **kwargs) -> str:
-    """
-    Retrieve localized text with optional formatting.
-    
-    Args:
-        lang: Language code ('en' or 'ru')
-        key: Translation key
-        **kwargs: Format arguments for string interpolation
-    
-    Returns:
-        Formatted localized string
-        
-    Example:
-        >>> get_text('en', 'check_python', version='3.11.5')
-        'Python version: 3.11.5'
-    """
+def get_text(lang: str, key: str, **kwargs: Any) -> str:
     try:
         text = TRANSLATIONS[lang][key]
         return text.format(**kwargs) if kwargs else text
     except KeyError:
-        # Fallback to English if key not found
         try:
             text = TRANSLATIONS["en"][key]
             return text.format(**kwargs) if kwargs else text
@@ -284,31 +273,16 @@ def get_text(lang: str, key: str, **kwargs) -> str:
 
 
 def get_system_language() -> str:
-    """
-    Detect system language and return appropriate code.
-    
-    Returns:
-        'ru' for Russian systems, 'en' for all others
-        
-    Note:
-        Uses locale.getdefaultlocale() for detection.
-        Falls back to 'en' if detection fails.
-    """
     import locale
+
     try:
         system_lang, _ = locale.getdefaultlocale()
-        if system_lang and system_lang.startswith('ru'):
-            return 'ru'
+        if system_lang and system_lang.startswith("ru"):
+            return "ru"
     except Exception:
         pass
-    return 'en'
+    return "en"
 
 
 def get_available_languages() -> list:
-    """
-    Get list of available language codes.
-    
-    Returns:
-        List of language codes (e.g., ['en', 'ru'])
-    """
     return list(TRANSLATIONS.keys())
