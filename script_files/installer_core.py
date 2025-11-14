@@ -626,48 +626,84 @@ class TRSAInstaller:
     # ========================================================================
 
     def install_triton(self) -> bool:
-        """Install Triton (optional)."""
-        py_ver = f"py{self.system_info.python_tuple[0]}{self.system_info.python_tuple[1]}"
-        if py_ver not in TRITON_VERSIONS:
-            self.logger.debug(f"No Triton for {py_ver}")
-            return False
+    """Install Triton (optional)."""
+    py_major, py_minor, _ = self.system_info.python_tuple
+    py_key = f"py{py_major}{py_minor}"
 
-        print(f"{self.t('triton_title')}\n{'=' * 70}")
-        choice = input(self.t("triton_prompt")).strip().lower()
+    print(f"{self.t('triton_title')}\n{'=' * 70}")
+    choice = input(self.t("triton_prompt")).strip().lower()
 
-        if choice not in ["y", "yes", "д", "да", ""]:
-            print(self.t("triton_skipped"))
-            return False
+    if choice not in ["y", "yes", "д", "да", ""]:
+        print(self.t("triton_skipped"))
+        return False
 
+    # Отдельная логика для Python 3.13: ставим через pip triton-windows
+    if py_key == "py313":
+        self.logger.info("Installing Triton for Python 3.13 via pip (triton-windows)")
         try:
-            url = f"{TRITON_BASE_URL}/{TRITON_VERSIONS[py_ver]}"
-            filename = url.split("/")[-1]
-
-            print(self.t("install_downloading", file=filename))
-            self.logger.info(f"Downloading Triton: {url}")
-
-            urllib.request.urlretrieve(url, filename)
-            self.temp_files.append(Path(filename))
-
-            print(self.t("triton_installing"))
+            cmd = [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "-U",
+                "triton-windows<3.6",
+            ]
             result = subprocess.run(
-                [sys.executable, "-m", "pip", "install", "--force-reinstall", filename],
+                cmd,
                 capture_output=True,
-                timeout=120,
+                text=True,
+                timeout=600,
             )
-
             if result.returncode == 0:
                 print(self.t("triton_success"))
-                self.logger.info("Triton installed")
+                self.logger.info("Triton installed via pip (triton-windows)")
                 return True
-
-            print(self.t("triton_failed"))
-            self.logger.error(f"Triton failed: {result.stderr[:200]}")
-            return False
+            else:
+                print(self.t("triton_failed"))
+                self.logger.error(f"Triton pip install failed: {result.stderr[:200]}")
+                return False
         except Exception as e:
             print(self.t("triton_failed"))
-            self.logger.error(f"Triton error: {e}")
+            self.logger.error(f"Triton error (pip): {e}")
             return False
+
+    # Для остальных версий Python — старая схема через wheel с GitHub
+    if py_key not in TRITON_VERSIONS:
+        self.logger.debug(f"No Triton mapping for {py_key}")
+        print(self.t("triton_skipped"))
+        return False
+
+    try:
+        url = f"{TRITON_BASE_URL}/{TRITON_VERSIONS[py_key]}"
+        filename = url.split("/")[-1]
+
+        print(self.t("install_downloading", file=filename))
+        self.logger.info(f"Downloading Triton: {url}")
+
+        urllib.request.urlretrieve(url, filename)
+        self.temp_files.append(Path(filename))
+
+        print(self.t("triton_installing"))
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "install", "--force-reinstall", filename],
+            capture_output=True,
+            timeout=120,
+        )
+
+        if result.returncode == 0:
+            print(self.t("triton_success"))
+            self.logger.info("Triton installed from wheel")
+            return True
+
+        print(self.t("triton_failed"))
+        self.logger.error(f"Triton failed: {result.stderr[:200]}")
+        return False
+    except Exception as e:
+        print(self.t("triton_failed"))
+        self.logger.error(f"Triton error: {e}")
+        return False
+
 
     # ========================================================================
     # SAGEATTENTION
