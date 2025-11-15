@@ -167,7 +167,7 @@ If your current setup is outside these ranges, the installer will either propose
 | GPU | Status | Notes |
 |-----|--------|-------|
 | RTX 4090 | ✅ Fully Supported (Optimal Performance) | Best results, high VRAM |
-| RTX 4080 | ✅ High performance | up to 30% average speedup vs baseline |
+| RTX 4080 | ✅ High performance | Up to 30% average speedup vs baseline |
 | RTX 3090 | ✅ Full SageAttention support | Good for heavy models |
 | RTX 3080 | ✅ Good performance | Recommended for SDXL |
 | RTX 3070 | ✅ Supported | 8 GB VRAM is tight but usable |
