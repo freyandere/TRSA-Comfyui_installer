@@ -5,7 +5,7 @@ This project follows a simplified Keep a Changelog style and semantic-ish versio
 
 ---
 
-## [2.6.1] – 2025-11-08
+## [2.6.1] – 2025-11-15
 
 ### Fixed
 - Corrected SageAttention wheel filenames to exactly match files stored in the `wheels/` directory, including Python 3.13 builds.
@@ -18,7 +18,7 @@ This project follows a simplified Keep a Changelog style and semantic-ish versio
 
 ---
 
-## [2.6.0] – 2025-11-08
+## [2.6.0] – 2025-11-13
 
 ### Added
 - Structured installation flow in `installer_core.py`:
@@ -91,3 +91,4 @@ This project follows a simplified Keep a Changelog style and semantic-ish versio
 - Остановка установки при отсутствии или неподдерживаемой версии PyTorch с понятным сообщением и корректным выходом.
 - Снижена вероятность “полубитой” установки за счёт проверки свободного места и сценария отката.
 - Устранены ошибки из-за несоответствия имён wheel-файлов и URL в репозитории.
+
