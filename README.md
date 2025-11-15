@@ -2,6 +2,8 @@
 
 # ⚡ TRSA ComfyUI Installer
 
+[Русская версия](README.ru.md)
+
 Accelerate your ComfyUI workflows on Windows by integrating Triton and SageAttention.
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/freyandere/TRSA-Comfyui_installer)](https://github.com/freyandere/TRSA-Comfyui_installer/releases)
