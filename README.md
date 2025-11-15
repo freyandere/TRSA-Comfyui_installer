@@ -10,6 +10,8 @@ Accelerate your ComfyUI workflows on Windows by integrating Triton and SageAtten
 [![Platform](https://img.shields.io/badge/Platform-Windows-brightgreen.svg)](https://github.com/freyandere/TRSA-Comfyui_installer)
 [![Python](https://img.shields.io/badge/Python-3.9%20%E2%80%93%203.13-blue)](https://python.org)
 
+[![starline](https://starlines.qoo.monster/assets/freyandere/TRSA-Comfyui_installer)](https://github.com/freyandere/TRSA-Comfyui_installer/stargazers)
+
 Achieve up to 30% performance boost on Windows systems.
 
 [Quick Start](#quick-start) • [Features](#features) • [Installation Details](#installation-details) • [Performance](#performance-requirements) • [Troubleshooting](#troubleshooting) • [Support](#support-the-project)
