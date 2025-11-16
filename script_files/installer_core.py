@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 TRSA ComfyUI Installer - Triton + SageAttention Accelerator
-Version: 2.7.3
+Version: 2.6.1
 Author: freyandere
 Repository: https://github.com/freyandere/TRSA-Comfyui_installer
 
-CHANGELOG 2.7.3:
+CHANGELOG 2.6.1:
 - Fixed Python version display (tuple formatting)
 - Fixed PyTorch version parsing (string not list)
 - Fixed upgrade logic: exact match detection for 2.9.0+cu130
@@ -59,7 +59,7 @@ except ImportError:
 # CONFIGURATION
 # ============================================================================
 
-VERSION = "2.7.3"
+VERSION = "2.6.1"
 GITHUB_REPO = "https://raw.githubusercontent.com/freyandere/TRSA-Comfyui_installer/main"
 WHEELS_BASE_PATH = "wheels"
 MIN_PYTHON_VERSION = (3, 9)
