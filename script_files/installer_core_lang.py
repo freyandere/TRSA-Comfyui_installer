@@ -1,6 +1,6 @@
 """
 TRSA ComfyUI Installer - Localization Module
-Version: 2.6.0
+Version: 2.6.1
 Supported languages: English (en), Russian (ru)
 
 This module provides all user-facing strings for the installer
