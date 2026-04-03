@@ -14,7 +14,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         # ====================================================================
         # WELCOME SCREEN
         # ====================================================================
-        "welcome_title": "TRSA ComfyUI SageAttention Installer",
+        "welcome_title": "TRSA ComfyUI Installer",
         "welcome_version": "Version: {version}",
         "welcome_separator": "=" * 70,
 
@@ -36,8 +36,8 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "check_python": "Python version: {version}",
         "check_torch": "PyTorch version: {version}",
         "check_cuda": "CUDA version: {version}",
-        "check_sage_installed": "SageAttention: Installed (v{version})",
-        "check_sage_not_installed": "SageAttention: Not installed",
+        "check_sage_installed": "SageAttention acceleration: Installed (v{version})",
+        "check_sage_not_installed": "SageAttention acceleration: Not installed",
         "check_compatible": "✓ Your system is fully compatible",
         "check_upgrade_needed": "⚠ Upgrade recommended for optimal performance",
         "check_current_config": "Current: PyTorch {torch}, CUDA {cuda}",
@@ -73,7 +73,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "install_wheel_not_found": "✗ No compatible wheel found for your configuration",
         "install_downloading": "Downloading {file}...",
         "install_download_progress": "  Progress: {percent}%",
-        "install_installing": "Installing SageAttention (this may take a minute)...",
+        "install_installing": "Installing acceleration package (this may take a minute)...",
         "install_success": "✓ SageAttention installed successfully!",
         "install_failed": "✗ Installation failed",
         "install_torch_upgrading": "Upgrading PyTorch to version {version}...",
@@ -94,8 +94,8 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "summary_title": "\nInstallation Summary",
         "summary_success": "✓ Installation completed successfully!",
         "summary_failed": "✗ Installation encountered errors",
-        "summary_previous_version": "Previous SageAttention: {version}",
-        "summary_installed_version": "Installed SageAttention: {version}",
+        "summary_previous_version": "Previous version: {version}",
+        "summary_installed_version": "Installed version: {version}",
         "summary_torch_version": "PyTorch: {version}",
         "summary_cuda_version": "CUDA: {version}",
         "summary_python_version": "Python: {version}",
@@ -152,7 +152,7 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         # ====================================================================
         # WELCOME SCREEN
         # ====================================================================
-        "welcome_title": "TRSA ComfyUI SageAttention Установщик",
+        "welcome_title": "TRSA ComfyUI Установщик",
         "welcome_version": "Версия: {version}",
         "welcome_separator": "=" * 70,
 
@@ -211,8 +211,8 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         "install_wheel_not_found": "✗ Совместимый wheel не найден для вашей конфигурации",
         "install_downloading": "Загрузка {file}...",
         "install_download_progress": "  Прогресс: {percent}%",
-        "install_installing": "Установка SageAttention (может занять минуту)...",
-        "install_success": "✓ SageAttention успешно установлен!",
+        "install_installing": "Установка пакета ускорения (может занять минуту)...",
+        "install_success": "✓ Пакеты ускорения успешно установлены!",
         "install_failed": "✗ Установка не удалась",
         "install_torch_upgrading": "Обновление PyTorch до версии {version}...",
 
