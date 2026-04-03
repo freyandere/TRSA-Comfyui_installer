@@ -26,6 +26,11 @@ set "SCRIPT_FOLDER=script_files"
 set "CORE_FILE=installer_core.py"
 set "LANG_FILE=installer_core_lang.py"
 
+:: Cache buster: GitHub raw CDN caches aggressively; this forces fresh downloads
+for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value') do set "dt=%%a"
+set "CACHE_BUSTER=%dt:~0,8%"
+set "DOWNLOAD_SUFFIX=?cb=%CACHE_BUSTER%"
+
 :: Verify Python availability
 python --version >nul 2>&1
 if errorlevel 1 (
@@ -43,9 +48,13 @@ if errorlevel 1 (
 echo [INFO] Python detected successfully
 echo.
 
-:: Download installer core files
+:: Clean up any leftover stale files from a previous crashed run
+del "%CORE_FILE%" >nul 2>&1
+del "%LANG_FILE%" >nul 2>&1
+
+:: Download installer core files (cache-busted to defeat CDN caching)
 echo [1/3] Downloading %CORE_FILE%...
-python -c "import urllib.request; urllib.request.urlretrieve('%REPO_URL%/%SCRIPT_FOLDER%/%CORE_FILE%', '%CORE_FILE%')" 2>nul
+python -c "import urllib.request; urllib.request.urlretrieve('%REPO_URL%/%SCRIPT_FOLDER%/%CORE_FILE%%DOWNLOAD_SUFFIX%', '%CORE_FILE%')" 2>nul
 if errorlevel 1 (
     echo [ERROR] Failed to download %CORE_FILE%
     echo.
@@ -62,7 +71,7 @@ if errorlevel 1 (
 echo [SUCCESS] %CORE_FILE% downloaded
 
 echo [2/3] Downloading %LANG_FILE%...
-python -c "import urllib.request; urllib.request.urlretrieve('%REPO_URL%/%SCRIPT_FOLDER%/%LANG_FILE%', '%LANG_FILE%')" 2>nul
+python -c "import urllib.request; urllib.request.urlretrieve('%REPO_URL%/%SCRIPT_FOLDER%/%LANG_FILE%%DOWNLOAD_SUFFIX%', '%LANG_FILE%')" 2>nul
 if errorlevel 1 (
     echo [ERROR] Failed to download %LANG_FILE%
     echo.
@@ -128,7 +137,7 @@ if errorlevel 1 (
 )
 
 echo [1/3] Downloading restore script...
-python -c "import urllib.request; urllib.request.urlretrieve('%REPO_URL%/%SCRIPT_FOLDER%/%CORE_FILE%', '%CORE_FILE%')" 2>nul
+python -c "import urllib.request; urllib.request.urlretrieve('%REPO_URL%/%SCRIPT_FOLDER%/%CORE_FILE%%DOWNLOAD_SUFFIX%', '%CORE_FILE%')" 2>nul
 if errorlevel 1 (
     echo [ERROR] Failed to download script. Cannot restore.
     pause
@@ -137,7 +146,7 @@ if errorlevel 1 (
 echo [SUCCESS] %CORE_FILE% downloaded
 
 echo [2/3] Downloading language file...
-python -c "import urllib.request; urllib.request.urlretrieve('%REPO_URL%/%SCRIPT_FOLDER%/%LANG_FILE%', '%LANG_FILE%')" 2>nul
+python -c "import urllib.request; urllib.request.urlretrieve('%REPO_URL%/%SCRIPT_FOLDER%/%LANG_FILE%%DOWNLOAD_SUFFIX%', '%LANG_FILE%')" 2>nul
 if errorlevel 1 (
     echo [ERROR] Failed to download language file. Cannot restore.
     del "%CORE_FILE%" >nul 2>&1

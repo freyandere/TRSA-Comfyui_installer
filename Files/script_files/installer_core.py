@@ -24,6 +24,8 @@ import urllib.request
 import urllib.error
 import urllib.parse
 import shutil
+import signal
+import atexit
 from typing import Optional, Tuple, Dict, List, Any
 from datetime import datetime
 from pathlib import Path
@@ -54,6 +56,50 @@ except ImportError:
     print("ERROR: installer_core_lang.py not found!")
     input("Press Enter to exit...")
     sys.exit(1)
+
+# ============================================================================
+# AUTOMATIC CLEANUP ON CRASH / WINDOW CLOSE
+# ============================================================================
+
+_CLEANUP_FILES: List[Path] = []
+
+
+def _emergency_cleanup() -> None:
+    """Remove temp files when the process is killed or crashes."""
+    for f in list(_CLEANUP_FILES):
+        try:
+            if f.exists():
+                f.unlink()
+        except Exception:
+            pass
+
+
+def _cleanup_temp_files(files: List[Path], logger: logging.Logger) -> None:
+    """Clean up temp files and register them as cleared."""
+    for f in files:
+        try:
+            if f.exists():
+                f.unlink()
+                logger.debug(f"Deleted: {f}")
+        except Exception as e:
+            logger.warning(f"Could not delete {f}: {e}")
+    _CLEANUP_FILES.clear()
+
+
+atexit.register(_emergency_cleanup)
+
+# Catch Ctrl+C and window close for cleanup
+def _signal_handler(signum: int, frame) -> None:  # type: ignore[reportAny]
+    _emergency_cleanup()
+    sys.exit(130)
+
+
+try:
+    signal.signal(signal.SIGINT, _signal_handler)
+    signal.signal(signal.SIGTERM, _signal_handler)
+except (ValueError, OSError):
+    # Can fail inside threads or on some platforms; not critical
+    pass
 
 # ============================================================================
 # CONFIGURATION
@@ -1214,6 +1260,7 @@ class TRSAInstaller:
             urllib.request.urlretrieve(url, local)
             if local.exists() and local.stat().st_size > 0:
                 self.temp_files.append(local)
+                _CLEANUP_FILES.append(local)
                 self.logger.info(f"Downloaded: {local.stat().st_size} bytes")
                 return local
         except urllib.error.URLError as e:
@@ -1336,6 +1383,7 @@ class TRSAInstaller:
                 urllib.request.urlretrieve(url, local)
                 if local.exists() and local.stat().st_size > 0:
                     self.temp_files.append(local)
+                    _CLEANUP_FILES.append(local)
                     print("done")
                     return self._pip_install_file(str(local), pkg_name)
                 else:
@@ -1425,23 +1473,8 @@ class TRSAInstaller:
     # ========================================================================
 
     def cleanup(self) -> None:
-        print(self.t("cleanup_title"))
-        print(self.t("cleanup_removing"))
-
-        count = 0
-        for f in self.temp_files:
-            try:
-                if f.exists():
-                    f.unlink()
-                    count += 1
-                    self.logger.debug(f"Deleted: {f}")
-            except Exception as e:
-                self.logger.warning(f"Could not delete {f}: {e}")
-
-        print(self.t("cleanup_success"))
-        self.logger.info(f"Cleaned {count} files")
-
-    def show_summary(self, success: bool) -> None:
+        """Clean up temp files and register them as cleared."""
+        _cleanup_temp_files(self.temp_files, self.logger)
         print(f"{self.t('summary_title')}\n{'=' * 70}")
 
         if success:
