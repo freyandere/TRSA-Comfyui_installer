@@ -21,6 +21,11 @@ ENV/
 .DS_Store
 Thumbs.db
 
+# Claude AI tool output
+docs/
+.superpowers/
+.claude/
+
 # Temporary files
 *.tmp
 *.whl.download
