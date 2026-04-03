@@ -20,6 +20,7 @@ import os
 import subprocess
 import re
 import logging
+import json
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -207,6 +208,132 @@ class InstallationResult:
 
 
 # ============================================================================
+# STATE BACKUP & RESTORE
+# ============================================================================
+
+TRACKED_PACKAGES = ["torch", "sageattention", "triton", "xformers"]
+BACKUP_FILE = "TRSA_state_backup.json"
+
+
+def _get_package_version(package: str) -> Optional[str]:
+    """Get installed version of a package via pip show, or None if not installed."""
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "show", package],
+            capture_output=True, text=True, timeout=10,
+        )
+        if result.returncode == 0:
+            for line in result.stdout.split("\n"):
+                if line.startswith("Version:"):
+                    return line.split(":", 1)[1].strip()
+    except Exception:
+        pass
+    return None
+
+
+def snapshot_state(logger: logging.Logger) -> Dict[str, Any]:
+    """Snapshot current versions of tracked packages."""
+    snapshot = {
+        "timestamp": datetime.now().isoformat(),
+        "python_version": f"{sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}",
+    }
+    for pkg in TRACKED_PACKAGES:
+        snapshot[f"{pkg}_version"] = _get_package_version(pkg)
+    logger.debug(f"State snapshot: {snapshot}")
+    return snapshot
+
+
+def save_backup(backup_data: Dict[str, Any], logger: logging.Logger) -> str:
+    """Write state snapshot to backup file. Returns the file path."""
+    try:
+        backup_path = Path(BACKUP_FILE)
+        backup_path.write_text(json.dumps(backup_data, indent=2), encoding="utf-8")
+        logger.info(f"State backup saved to {backup_path}")
+        return str(backup_path.absolute())
+    except Exception as e:
+        logger.warning(f"Could not write state backup: {e}")
+        return ""
+
+
+def restore_mode(logger: logging.Logger) -> None:
+    """Restore system to backed-up state. Called when --restore flag is passed."""
+    try:
+        from installer_core_lang import get_text
+    except ImportError:
+        print("[ERROR] Cannot load translations, continuing in English only.")
+        def get_text(lang, key, **kwargs):
+            return key
+
+    t = lambda key, **kwargs: get_text("en", key, **kwargs)
+
+    backup_path = Path(BACKUP_FILE)
+    if not backup_path.exists():
+        print("[ ERROR ]")
+        print(f"   No backup file found at {backup_path}.")
+        print("   Cannot restore. You may need to manually uninstall packages.")
+        input(t("press_enter"))
+        return
+
+    try:
+        backup = json.loads(backup_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, Exception) as e:
+        logger.error(f"Corrupted backup: {e}")
+        print("[ ERROR ]")
+        print("   Backup file is corrupted or unreadable.")
+        print("   Attempting best-effort cleanup...")
+        for pkg in TRACKED_PACKAGES:
+            print(f"   Uninstalling {pkg}...")
+            subprocess.run(
+                [sys.executable, "-m", "pip", "uninstall", "-y", pkg],
+                capture_output=True, timeout=30,
+            )
+        print(f"   Done. Checked: {', '.join(TRACKED_PACKAGES)}")
+        input(t("press_enter"))
+        return
+
+    print("[ Restore ]")
+    print(f"   Restoring state from {backup.get('timestamp', 'unknown')}...")
+    print()
+
+    for pkg in TRACKED_PACKAGES:
+        version_key = f"{pkg}_version"
+        saved_version = backup.get(version_key)
+
+        if saved_version:
+            print(f"   Restoring {pkg} to {saved_version}...")
+            try:
+                subprocess.run(
+                    [sys.executable, "-m", "pip", "uninstall", "-y", pkg],
+                    capture_output=True, timeout=30,
+                )
+                cmd = [sys.executable, "-m", "pip", "install", f"{pkg}=={saved_version}"]
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                if result.returncode == 0:
+                    print(f"   {pkg} restored")
+                else:
+                    print(f"   {pkg} restore failed")
+            except Exception as e:
+                print(f"   {pkg} restore error: {e}")
+        elif saved_version is None:
+            pkg_ver = _get_package_version(pkg)
+            if pkg_ver:
+                print(f"   Removing {pkg} {pkg_ver} (was not installed before)...")
+                try:
+                    subprocess.run(
+                        [sys.executable, "-m", "pip", "uninstall", "-y", pkg],
+                        capture_output=True, timeout=30,
+                    )
+                    print(f"   {pkg} removed")
+                except Exception as e:
+                    print(f"   {pkg} removal error: {e}")
+
+    print()
+    print("   Restore complete.")
+    print("   You can now run the installer normally to start fresh.")
+    input(t("press_enter"))
+
+
+# ============================================================================
 # LOGGING
 # ============================================================================
 
@@ -301,6 +428,7 @@ class TRSAInstaller:
         self.selected_config: Optional[Dict[str, str]] = None
         self.errors: List[str] = []
         self.temp_files: List[Path] = []
+        self.last_backup_path = ""
 
         self.logger.info(f"TRSA Installer v{VERSION} initialized")
         self.logger.debug(f"Log: {self.log_path}")
@@ -1142,8 +1270,14 @@ class TRSAInstaller:
             info = self.check_system()
             prev_sage = info.sage_version
 
+            self.logger.info("=== Stage 4: State Backup ===")
+            state = snapshot_state(self.logger)
+            self.last_backup_path = save_backup(state, self.logger)
+            if self.last_backup_path:
+                print(f"   State backup saved: {self.last_backup_path}")
+
             if info.upgrade_needed:
-                self.logger.info("=== Stage 4: PyTorch Upgrade ===")
+                self.logger.info("=== Stage 5: PyTorch Upgrade ===")
                 if self.prompt_torch_upgrade():
                     latest = self._get_latest_config()
                     if latest:
@@ -1151,26 +1285,26 @@ class TRSAInstaller:
                         if not upgrade_success:
                             print(self.t("torch_upgrade_continue"))
 
-            self.logger.info("=== Stage 5: Cleanup ===")
+            self.logger.info("=== Stage 6: Cleanup ===")
             self.uninstall_package("triton")
             self.uninstall_package("sageattention")
 
-            self.logger.info("=== Stage 6: Triton ===")
+            self.logger.info("=== Stage 7: Triton ===")
             self.install_triton()
 
-            self.logger.info("=== Stage 7: Selection ===")
+            self.logger.info("=== Stage 8: Selection ===")
             config = self.select_wheel_config()
             if not config:
                 self.show_summary(False)
                 return self._create_result(False, prev_sage, None)
 
-            self.logger.info("=== Stage 8: Download ===")
+            self.logger.info("=== Stage 9: Download ===")
             wheel = self.download_wheel(config)
             if not wheel:
                 self.show_summary(False)
                 return self._create_result(False, prev_sage, None)
 
-            self.logger.info("=== Stage 9: Install ===")
+            self.logger.info("=== Stage 10: Install ===")
             success = self.install_sageattention(wheel)
 
             if not success:
@@ -1219,6 +1353,22 @@ class TRSAInstaller:
 
 
 def main() -> None:
+    if "--restore" in sys.argv:
+        logger = logging.getLogger("TRSAInstaller")
+        logger.setLevel(logging.DEBUG)
+        try:
+            handler = logging.StreamHandler(sys.stdout)
+            handler.setLevel(logging.DEBUG)
+            handler.setFormatter(
+                logging.Formatter("%(asctime)s | %(levelname)-8s | %(message)s",
+                                  datefmt="%Y-%m-%d %H:%M:%S")
+            )
+            logger.addHandler(handler)
+        except Exception:
+            pass
+        restore_mode(logger)
+        sys.exit(0)
+
     try:
         installer = TRSAInstaller()
         result = installer.run()
