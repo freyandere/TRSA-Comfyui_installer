@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-TRSA ComfyUI Installer - Triton + SageAttention Accelerator
-Version: 2.6.1
+TRSA ComfyUI Installer - Multi-Package Accelerator
+Version: 2.7.0
 Author: freyandere
 Repository: https://github.com/freyandere/TRSA-Comfyui_installer
 
-CHANGELOG 2.6.1:
-- Fixed Python version display (tuple formatting)
-- Fixed PyTorch version parsing (string not list)
-- Fixed upgrade logic: exact match detection for 2.9.0+cu130
-- Fixed py_config_key detection (index check)
-- Fixed Triton version key generation
-- Fixed _find_compatible return type
+CHANGELOG 2.7.0:
+- Added GPU detection with nvidia-smi and torch.cuda fallback
+- Replaced hardcoded wheel configs with manifest-driven resolution
+- Added state backup and --restore recovery
+- Remote manifest fetch from wildminder/AI-windows-whl with local fallback
+- Multi-package installation (SageAttention, Triton, more)
 """
 
 import sys
@@ -1483,7 +1482,7 @@ class TRSAInstaller:
             )
 
         # Package installation results
-        if hasattr(self, "installation_results") and self.installation_results:
+        if self.installation_results:
             print()
             print("[ Package Results ]")
             for r in self.installation_results:
@@ -1504,9 +1503,9 @@ class TRSAInstaller:
 
         if success:
             print(self.t("summary_next_steps"))
-            print("  1. Restart ComfyUI")
-            print("  2. SageAttention will be automatically used")
-            print("  3. Check the log file if you encounter issues")
+            print(self.t("summary_next_step_1"))
+            print(self.t("summary_next_step_2"))
+            print(self.t("summary_next_step_3"))
             if getattr(self, "last_backup_path", ""):
                 print("  To restore your previous state, run: TRSA_installer.bat --restore")
 

@@ -3,11 +3,14 @@ chcp 65001 >nul
 setlocal EnableDelayedExpansion
 
 :: ============================================================================
-:: TRSA ComfyUI SageAttention Installer v2.7.0
+:: TRSA ComfyUI Installer v2.7.0
 :: Repository: https://github.com/freyandere/TRSA-Comfyui_installer
 :: ============================================================================
 
 title TRSA ComfyUI Installer v2.7.0
+
+:: Handle --restore flag
+if "%1"=="--restore" goto :restore
 
 echo.
 echo ============================================================
@@ -98,3 +101,48 @@ echo.
 
 :: Exit with installer's exit code
 exit /b %INSTALLER_EXIT_CODE%
+
+:: ============================================================================
+:: Restore Mode
+:: ============================================================================
+
+:restore
+echo.
+echo ============================================================
+echo   TRSA ComfyUI Restore
+echo ============================================================
+echo.
+echo Restoring your previous configuration...
+echo.
+
+:: Verify Python availability
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] Python executable not found!
+    echo.
+    echo Please ensure you are running this script from:
+    echo   ComfyUI\python_embeded\
+    echo.
+    pause
+    exit /b 1
+)
+
+echo [1/2] Downloading restore script...
+python -c "import urllib.request; urllib.request.urlretrieve('%REPO_URL%/%SCRIPT_FOLDER%/%CORE_FILE%', '%CORE_FILE%')" 2>nul
+if errorlevel 1 (
+    echo [ERROR] Failed to download script. Cannot restore.
+    pause
+    exit /b 1
+)
+echo [SUCCESS] %CORE_FILE% downloaded
+
+echo [2/2] Running restore...
+python "%CORE_FILE%" --restore
+
+:: Cleanup
+del "%CORE_FILE%" >nul 2>&1
+
+echo.
+echo Restore process completed.
+echo.
+pause
