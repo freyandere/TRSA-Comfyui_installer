@@ -1354,18 +1354,9 @@ class TRSAInstaller:
 
 def main() -> None:
     if "--restore" in sys.argv:
-        logger = logging.getLogger("TRSAInstaller")
-        logger.setLevel(logging.DEBUG)
-        try:
-            handler = logging.StreamHandler(sys.stdout)
-            handler.setLevel(logging.DEBUG)
-            handler.setFormatter(
-                logging.Formatter("%(asctime)s | %(levelname)-8s | %(message)s",
-                                  datefmt="%Y-%m-%d %H:%M:%S")
-            )
-            logger.addHandler(handler)
-        except Exception:
-            pass
+        logger, log_path = setup_logging()
+        print(f"Restore log: {log_path}")
+        print()
         restore_mode(logger)
         sys.exit(0)
 
