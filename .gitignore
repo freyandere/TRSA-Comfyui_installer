@@ -31,3 +31,10 @@ plans/
 # Temporary files
 *.tmp
 *.whl.download
+
+# Worktrees
+.worktrees/
+
+# PyInstaller artifacts
+dist/
+build/
