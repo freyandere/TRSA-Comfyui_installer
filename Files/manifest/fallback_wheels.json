@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "packages": {
+    "sageattention": {
+      "description": "Sparse attention optimization",
+      "critical": true,
+      "wheels": [
+        {
+          "filename": "sageattention-2.2.0+cu128torch2.8.0.post3-cp39-abi3-win_amd64.whl",
+          "python_tags": ["cp39", "cp310", "cp311", "cp312"],
+          "cuda_tag": "cu128",
+          "torch_min": "2.8.0",
+          "python_folder": "3.9",
+          "url_pattern": "local://{python_folder}/{filename}"
+        },
+        {
+          "filename": "sageattention-2.2.0+cu130torch2.9.0andhigher.post4-cp39-abi3-win_amd64.whl",
+          "python_tags": ["cp39", "cp310", "cp311", "cp312"],
+          "cuda_tag": "cu130",
+          "torch_min": "2.9.0",
+          "python_folder": "3.9",
+          "url_pattern": "local://{python_folder}/{filename}"
+        }
+      ]
+    },
+    "triton": {
+      "description": "Triton GPU compiler for Windows",
+      "critical": false,
+      "wheels": [
+        {
+          "filename": "triton-3.1.0-cp311-cp311-win_amd64.whl",
+          "python_tags": ["cp311"],
+          "cuda_tag": "any",
+          "torch_min": null,
+          "url_pattern": "https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0/{filename}"
+        },
+        {
+          "filename": "triton-3.1.0-cp312-cp312-win_amd64.whl",
+          "python_tags": ["cp312"],
+          "cuda_tag": "any",
+          "torch_min": null,
+          "url_pattern": "https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0/{filename}"
+        },
+        {
+          "filename": "triton-3.1.0-cp313-cp313-win_amd64.whl",
+          "python_tags": ["cp313"],
+          "cuda_tag": "any",
+          "torch_min": null,
+          "url_pattern": "https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0/{filename}"
+        },
+        {
+          "filename": "triton-3.0.0-cp39-cp39-win_amd64.whl",
+          "python_tags": ["cp39", "cp310"],
+          "cuda_tag": "any",
+          "torch_min": null,
+          "url_pattern": "https://github.com/woct0rdho/triton-windows/releases/download/v3.0.0/{filename}"
+        }
+      ]
+    }
+  }
+}
