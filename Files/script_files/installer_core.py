@@ -176,6 +176,149 @@ def _get_min_cuda_for_compute_cap(major: int, minor: int) -> Optional[str]:
 
 
 # ============================================================================
+# REMOTE MANIFEST CONFIGURATION
+# ============================================================================
+
+# Remote manifest for wheel resolution
+REMOTE_MANIFEST_URL = "https://raw.githubusercontent.com/wildminder/AI-windows-whl/main/wheels.json"
+MANIFEST_TIMEOUT = 5  # seconds
+LOCAL_MANIFEST_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "..", "manifest", "fallback_wheels.json",
+)
+
+# Packages to install: (name, description, is_critical)
+PACKAGES_TO_INSTALL: List[Tuple[str, str, bool]] = [
+    ("sageattention", "SageAttention attention optimization", True),
+    ("triton", "Triton GPU compiler", False),
+]
+
+
+class WheelManifest:
+    """Fetches, validates, and resolves wheel manifests."""
+
+    def __init__(self, logger: logging.Logger) -> None:
+        self.logger = logger
+        self.data: Dict[str, Any] = {}
+        self.source = ""  # "remote" or "local"
+
+    def fetch(self) -> bool:
+        """Try remote manifest first, fall back to local. Returns True if loaded."""
+        if self._fetch_remote():
+            self.source = "remote"
+            return True
+        if self._load_local():
+            self.source = "local"
+            return True
+        self.logger.error("No manifest available (remote unreachable, local missing)")
+        return False
+
+    def _fetch_remote(self) -> bool:
+        """Fetch and validate remote manifest."""
+        try:
+            self.logger.debug(f"Fetching manifest from {REMOTE_MANIFEST_URL}")
+            req = urllib.request.Request(REMOTE_MANIFEST_URL)
+            req.add_header("User-Agent", "TRSA-Installer")
+            with urllib.request.urlopen(req, timeout=MANIFEST_TIMEOUT) as resp:
+                raw = resp.read().decode("utf-8")
+            data = json.loads(raw)
+            if self._validate_schema(data):
+                self.data = data
+                self.logger.info("Remote manifest loaded and validated")
+                return True
+            self.logger.warning("Remote manifest schema validation failed")
+        except Exception as e:
+            self.logger.debug(f"Remote manifest fetch failed: {e}")
+        return False
+
+    def _load_local(self) -> bool:
+        """Load local fallback manifest."""
+        try:
+            path = Path(LOCAL_MANIFEST_PATH)
+            if not path.exists():
+                self.logger.debug(f"Local manifest not found: {path}")
+                return False
+            data = json.loads(path.read_text(encoding="utf-8"))
+            if self._validate_schema(data):
+                self.data = data
+                self.logger.info("Local fallback manifest loaded")
+                return True
+        except Exception as e:
+            self.logger.debug(f"Local manifest load failed: {e}")
+        return False
+
+    def _validate_schema(self, data: Dict[str, Any]) -> bool:
+        """Validate manifest has the expected structure."""
+        if not isinstance(data, dict):
+            return False
+        if "packages" not in data:
+            return False
+        if not isinstance(data["packages"], dict):
+            return False
+        for pkg_name, pkg_data in data["packages"].items():
+            if not isinstance(pkg_data, dict):
+                return False
+            if "wheels" not in pkg_data:
+                return False
+            if not isinstance(pkg_data["wheels"], list):
+                return False
+            for wheel in pkg_data["wheels"]:
+                if not isinstance(wheel, dict):
+                    return False
+                if "filename" not in wheel:
+                    return False
+                if "python_tags" not in wheel:
+                    return False
+                if "cuda_tag" not in wheel:
+                    return False
+                if "url_pattern" not in wheel:
+                    return False
+        return True
+
+    def resolve(self, python_minor: int, cuda_ver: Optional[str],
+                torch_ver: Optional[str], package_name: str) -> Optional[Dict[str, Any]]:
+        """Resolve the best matching wheel for a package.
+
+        Returns wheel dict with resolved url, or None.
+        """
+        pkg_data = self.data.get("packages", {}).get(package_name)
+        if not pkg_data:
+            return None
+
+        cp_tag = f"cp3{python_minor}"
+
+        candidates = []
+        for wheel in pkg_data["wheels"]:
+            if cp_tag not in wheel["python_tags"]:
+                continue
+            if wheel["cuda_tag"] != "any" and wheel["cuda_tag"] != cuda_ver:
+                continue
+            if wheel.get("torch_min"):
+                if not torch_ver or compare_versions(torch_ver, wheel["torch_min"]) < 0:
+                    continue
+            candidates.append(wheel)
+
+        if not candidates:
+            return None
+
+        candidates.sort(
+            key=lambda w: parse_version_safe(w.get("torch_min", "0.0.0")),
+            reverse=True,
+        )
+        result = candidates[0]
+        # Resolve URL
+        url_pattern = result.get("url_pattern", "")
+        filename = urllib.parse.quote(result["filename"], safe="")
+        if url_pattern.startswith("local://"):
+            result["url"] = url_pattern
+            result["is_local"] = True
+        else:
+            result["url"] = url_pattern.format(filename=filename)
+            result["is_local"] = False
+        return result
+
+
+# ============================================================================
 # DATA CLASSES
 # ============================================================================
 
@@ -1118,6 +1261,117 @@ class TRSAInstaller:
             print(self.t("install_failed"))
             self.logger.error(f"Error: {e}")
             return False
+
+    # ========================================================================
+    # MANIFEST-DRIVEN PACKAGE INSTALLATION
+    # ========================================================================
+
+    def install_packages_from_manifest(self) -> List[Dict[str, str]]:
+        """Install all packages from PACKAGES_TO_INSTALL using manifest."""
+        if not self.system_info:
+            return []
+
+        manifest = WheelManifest(self.logger)
+        loaded = manifest.fetch()
+        if not loaded:
+            print("[ WARNING ]")
+            print("   Could not load any wheel manifest.")
+            print("   Using local fallback — some packages may not be available.")
+            print()
+
+        if manifest.source == "remote":
+            print("[ Package Resolution ]")
+            print("   Checking latest wheels from wildminder/AI-windows-whl...")
+        else:
+            print("[ Package Resolution ]")
+            print("   Remote unavailable. Using local fallback manifest...")
+        print()
+
+        py_minor = self.system_info.python_tuple[1]
+        cuda_ver = self.system_info.cuda_version
+        torch_ver = self.system_info.torch_version
+
+        results = []
+        for pkg_name, pkg_desc, is_critical in PACKAGES_TO_INSTALL:
+            print(f"   Resolving {pkg_desc}...")
+            wheel = manifest.resolve(py_minor, cuda_ver, torch_ver, pkg_name)
+            if not wheel:
+                if is_critical:
+                    print(f"   [CRITICAL] {pkg_name}: Not available!")
+                else:
+                    print(f"   {pkg_name} — no wheel available for your configuration.")
+                    print("   This is safe to skip. ComfyUI will work normally.")
+                print()
+                results.append({"name": pkg_name, "status": "skipped", "error": "no matching wheel"})
+                continue
+
+            print(f"   {pkg_name} — found (CUDA {wheel.get('cuda_tag', 'any')})")
+            installed = self._install_wheel(wheel, pkg_name)
+            results.append(installed)
+            print()
+
+        return results
+
+    def _install_wheel(self, wheel: Dict[str, Any], pkg_name: str) -> Dict[str, str]:
+        """Download and install a single wheel."""
+        filename = wheel["filename"]
+        is_local = wheel.get("is_local", False)
+
+        if is_local:
+            python_folder = wheel.get("python_folder", "3.9")
+            wheels_base = Path(__file__).parent.parent / "wheels" / python_folder
+            local_path = wheels_base / filename
+            if local_path.exists():
+                self.logger.info(f"Using local wheel: {local_path}")
+                return self._pip_install_file(str(local_path), pkg_name)
+            else:
+                self.logger.warning(f"Local wheel not found: {local_path}")
+                return {"name": pkg_name, "status": "failed", "error": "local file missing"}
+        else:
+            url = wheel["url"]
+            self.logger.info(f"Downloading {filename} from {url}")
+            print(f"   Downloading {filename[:50]}... ", end="", flush=True)
+            try:
+                clean_name = filename.split("?")[0]
+                local = Path(clean_name)
+                urllib.request.urlretrieve(url, local)
+                if local.exists() and local.stat().st_size > 0:
+                    self.temp_files.append(local)
+                    print("done")
+                    return self._pip_install_file(str(local), pkg_name)
+                else:
+                    local.unlink(missing_ok=True)
+                    return {"name": pkg_name, "status": "failed", "error": "download empty"}
+            except Exception as e:
+                self.logger.error(f"Download failed: {e}")
+                print("failed")
+                return {"name": pkg_name, "status": "failed", "error": str(e)[:100]}
+
+    def _pip_install_file(self, filepath: str, pkg_name: str) -> Dict[str, str]:
+        """Install a wheel file via pip. Returns result dict."""
+        self.logger.info(f"Installing {pkg_name} from {filepath}")
+        print(f"   Installing {pkg_name}... ", end="", flush=True)
+        try:
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", filepath],
+                capture_output=True, text=True, timeout=180,
+            )
+            if result.returncode == 0:
+                ver = _get_package_version(pkg_name)
+                print("done")
+                return {"name": pkg_name, "status": "installed", "version": ver or "unknown"}
+            else:
+                self.logger.error(f"{pkg_name} install failed: {result.stderr[:200]}")
+                print("failed")
+                self.uninstall_package(pkg_name)
+                return {"name": pkg_name, "status": "failed", "error": result.stderr[:200]}
+        except subprocess.TimeoutExpired:
+            print("timed out")
+            return {"name": pkg_name, "status": "failed", "error": "timeout"}
+        except Exception as e:
+            self.logger.error(f"{pkg_name} pip install error: {e}")
+            print("error")
+            return {"name": pkg_name, "status": "failed", "error": str(e)[:100]}
 
     # ========================================================================
     # ROLLBACK
