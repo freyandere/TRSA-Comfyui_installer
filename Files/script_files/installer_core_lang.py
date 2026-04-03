@@ -130,6 +130,12 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         # ====================================================================
         "press_enter": "\nPress Enter to exit...",
 
+        # PACKAGE RESULTS
+        "pkg_installed_check": "done",
+        "pkg_failed_check": "failed",
+        "pkg_timed_out": "timed out",
+        "pkg_error": "error",
+
         # GPU DETECTION
         "gpu_section_title": "[ GPU Detection ]",
         "gpu_detecting": "   Detecting your GPU...",
@@ -261,6 +267,12 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         # PROMPTS
         # ====================================================================
         "press_enter": "\nНажмите Enter для выхода...",
+
+        # PACKAGE RESULTS
+        "pkg_installed_check": "выполнено",
+        "pkg_failed_check": "ошибка",
+        "pkg_timed_out": "превышено время",
+        "pkg_error": "ошибка",
 
         # GPU DETECTION
         "gpu_section_title": "[ Обнаружение GPU ]",

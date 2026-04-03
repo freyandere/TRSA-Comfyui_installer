@@ -60,7 +60,7 @@ except ImportError:
 # CONFIGURATION
 # ============================================================================
 
-VERSION = "2.6.1"
+VERSION = "2.7.0"
 GITHUB_REPO = "https://raw.githubusercontent.com/freyandere/TRSA-Comfyui_installer/main"
 WHEELS_BASE_PATH = "wheels"
 MIN_PYTHON_VERSION = (3, 9)
@@ -570,6 +570,7 @@ class TRSAInstaller:
         self.selected_config: Optional[Dict[str, str]] = None
         self.errors: List[str] = []
         self.temp_files: List[Path] = []
+        self.installation_results: List[Dict[str, str]] = []
         self.last_backup_path = ""
 
         self.logger.info(f"TRSA Installer v{VERSION} initialized")
@@ -1452,45 +1453,50 @@ class TRSAInstaller:
         print()
 
         if self.system_info:
+            # GPU info
+            if self.system_info.gpu_name:
+                print(f"   GPU: {self.system_info.gpu_name}")
+                if self.system_info.vram_mb:
+                    print(f"   VRAM: {self.system_info.vram_mb / 1024:.1f} GB")
+            else:
+                print("   GPU: Not detected (CPU mode)")
+            print()
+
             if self.system_info.sage_version:
                 print(
-                    self.t(
-                        "summary_previous_version",
-                        version=self.system_info.sage_version,
-                    )
+                    self.t("summary_previous_version", version=self.system_info.sage_version)
                 )
 
             new_ver = self._get_sage_version()
             if new_ver:
-                print(
-                    self.t(
-                        "summary_installed_version",
-                        version=new_ver,
-                    )
-                )
+                print(self.t("summary_installed_version", version=new_ver))
 
             print()
             print(
-                self.t(
-                    "summary_python_version",
-                    version=self.system_info.python_version,
-                )
+                self.t("summary_python_version", version=self.system_info.python_version)
             )
             print(
-                self.t(
-                    "summary_torch_version",
-                    version=self.system_info.torch_version or "N/A",
-                )
+                self.t("summary_torch_version", version=self.system_info.torch_version or "N/A")
             )
             print(
-                self.t(
-                    "summary_cuda_version",
-                    version=self.system_info.cuda_version or "N/A",
-                )
+                self.t("summary_cuda_version", version=self.system_info.cuda_version or "N/A")
             )
 
+        # Package installation results
+        if hasattr(self, "installation_results") and self.installation_results:
+            print()
+            print("[ Package Results ]")
+            for r in self.installation_results:
+                if r["status"] == "installed":
+                    print(f"   {r['name']} {r.get('version', '')}")
+                elif r["status"] == "skipped":
+                    print(f"   {r['name']} — skipped (not available for your config)")
+                else:
+                    print(f"   {r['name']} — failed: {r.get('error', 'unknown')}")
+            print()
+
         if self.errors:
-            print(f"\n{self.t('summary_errors', count=len(self.errors))}")
+            print(f"\nErrors encountered: {len(self.errors)}")
             for i, err in enumerate(self.errors, 1):
                 print(f"  {i}. {err[:100]}")
 
@@ -1498,9 +1504,11 @@ class TRSAInstaller:
 
         if success:
             print(self.t("summary_next_steps"))
-            print(f"  {self.t('summary_next_step_1')}")
-            print(f"  {self.t('summary_next_step_2')}")
-            print(f"  {self.t('summary_next_step_3')}")
+            print("  1. Restart ComfyUI")
+            print("  2. SageAttention will be automatically used")
+            print("  3. Check the log file if you encounter issues")
+            if getattr(self, "last_backup_path", ""):
+                print("  To restore your previous state, run: TRSA_installer.bat --restore")
 
         print("=" * 70)
 
@@ -1537,40 +1545,41 @@ class TRSAInstaller:
                         if not upgrade_success:
                             print(self.t("torch_upgrade_continue"))
 
-            self.logger.info("=== Stage 6: Cleanup ===")
+            self.logger.info("=== Stage 7: Cleanup ===")
             self.uninstall_package("triton")
             self.uninstall_package("sageattention")
 
-            self.logger.info("=== Stage 7: Triton ===")
-            self.install_triton()
+            self.logger.info("=== Stage 8: Manifest-driven Installation ===")
+            pkg_results = self.install_packages_from_manifest()
+            self.installation_results = pkg_results
 
-            self.logger.info("=== Stage 8: Selection ===")
-            config = self.select_wheel_config()
-            if not config:
-                self.show_summary(False)
-                return self._create_result(False, prev_sage, None)
+            # Determine overall success - fail only if a critical package failed
+            critical_names = {name for name, _, crit in PACKAGES_TO_INSTALL if crit}
+            any_critical_failed = any(
+                r["status"] == "failed" and r["name"] in critical_names
+                for r in pkg_results
+            )
 
-            self.logger.info("=== Stage 9: Download ===")
-            wheel = self.download_wheel(config)
-            if not wheel:
-                self.show_summary(False)
-                return self._create_result(False, prev_sage, None)
-
-            self.logger.info("=== Stage 10: Install ===")
-            success = self.install_sageattention(wheel)
+            success = not any_critical_failed
+            new_sage = None
+            for r in pkg_results:
+                if r["name"] == "sageattention":
+                    new_sage = r.get("version")
 
             if not success:
-                if self.prompt_rollback():
-                    self.rollback_sageattention()
+                sage_result = next((r for r in pkg_results if r["name"] == "sageattention"), None)
+                if sage_result and sage_result["status"] == "failed":
+                    if self.prompt_rollback():
+                        self.rollback_sageattention()
+
                 self.cleanup()
                 self.show_summary(False)
-                return self._create_result(False, prev_sage, None)
+                return self._create_result(False, prev_sage, new_sage)
 
-            new_ver = self._get_sage_version()
             self.cleanup()
             self.show_summary(True)
 
-            return self._create_result(True, prev_sage, new_ver)
+            return self._create_result(True, prev_sage, new_sage)
 
         except KeyboardInterrupt:
             self.logger.warning("Cancelled by user")
