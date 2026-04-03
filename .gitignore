@@ -21,10 +21,12 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Claude AI tool output
-docs/
-.superpowers/
+# Claude AI tool output (NEVER push to git)
+CLAUDE.md
 .claude/
+.superpowers/
+docs/
+plans/
 
 # Temporary files
 *.tmp
