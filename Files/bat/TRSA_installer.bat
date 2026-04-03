@@ -127,7 +127,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [1/2] Downloading restore script...
+echo [1/3] Downloading restore script...
 python -c "import urllib.request; urllib.request.urlretrieve('%REPO_URL%/%SCRIPT_FOLDER%/%CORE_FILE%', '%CORE_FILE%')" 2>nul
 if errorlevel 1 (
     echo [ERROR] Failed to download script. Cannot restore.
@@ -136,11 +136,22 @@ if errorlevel 1 (
 )
 echo [SUCCESS] %CORE_FILE% downloaded
 
-echo [2/2] Running restore...
+echo [2/3] Downloading language file...
+python -c "import urllib.request; urllib.request.urlretrieve('%REPO_URL%/%SCRIPT_FOLDER%/%LANG_FILE%', '%LANG_FILE%')" 2>nul
+if errorlevel 1 (
+    echo [ERROR] Failed to download language file. Cannot restore.
+    del "%CORE_FILE%" >nul 2>&1
+    pause
+    exit /b 1
+)
+echo [SUCCESS] %LANG_FILE% downloaded
+
+echo [3/3] Running restore...
 python "%CORE_FILE%" --restore
 
 :: Cleanup
 del "%CORE_FILE%" >nul 2>&1
+del "%LANG_FILE%" >nul 2>&1
 
 echo.
 echo Restore process completed.
