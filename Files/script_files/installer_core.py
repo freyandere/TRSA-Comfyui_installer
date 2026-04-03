@@ -12,6 +12,12 @@ CHANGELOG 2.7.0:
 - Added state backup and --restore recovery
 - Remote manifest fetch from wildminder/AI-windows-whl with local fallback
 - Multi-package installation (SageAttention, Triton, more)
+
+CHANGELOG 2.8.0:
+- Ported to single executable (PyInstaller --onefile)
+- Rich TUI with panels, progress bars, and status colors
+- CLI: --auto, --yes, --dry-run, --version, --restore flags
+- Fixed pip subprocess path for frozen bundles
 """
 
 import sys
@@ -20,6 +26,7 @@ import subprocess
 import re
 import logging
 import json
+import argparse
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -32,23 +39,25 @@ from pathlib import Path
 from dataclasses import dataclass
 from enum import Enum
 
-# Import packaging для version comparison
+# Rich TUI imports
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+    from rich.prompt import Prompt
+    from rich.text import Text
+    from rich.table import Table
+    HAS_RICH = True
+except ImportError:
+    HAS_RICH = False
+
+# Packaging is bundled in the exe, so no auto-install needed
 try:
     from packaging import version as pkg_version
     HAS_PACKAGING = True
 except ImportError:
     HAS_PACKAGING = False
-    print("WARNING: 'packaging' library not found. Installing...")
-    try:
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "packaging"],
-            capture_output=True,
-            timeout=30,
-        )
-        from packaging import version as pkg_version  # type: ignore
-        HAS_PACKAGING = True
-    except Exception:
-        print("ERROR: Could not install 'packaging'. Version checks may be inaccurate.")
+    print("WARNING: 'packaging' library not found.")
 
 try:
     from installer_core_lang import get_text, get_system_language
@@ -56,6 +65,88 @@ except ImportError:
     print("ERROR: installer_core_lang.py not found!")
     input("Press Enter to exit...")
     sys.exit(1)
+
+# ============================================================================
+# RICH CONSOLE & TUI HELPERS
+# ============================================================================
+
+# When running frozen by PyInstaller, sys.executable points to the .exe itself.
+# For pip operations we need the actual ComfyUI embedded python.exe.
+def _get_comfyui_python() -> str:
+    """Find the ComfyUI embedded Python for pip operations."""
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).parent
+        candidate = exe_dir / "python.exe"
+        if candidate.exists():
+            return str(candidate)
+    return sys.executable
+
+
+def _get_console() -> "Console":
+    """Get or create the Rich console singleton."""
+    if not hasattr(_get_console, "instance"):
+        _get_console.instance = Console()
+    return _get_console.instance
+
+
+def panel(text: str, title: str = "", border_style: str = "blue") -> None:
+    """Print a Rich panel box."""
+    console = _get_console()
+    if HAS_RICH:
+        console.print(Panel(text, title=title, border_style=border_style))
+    else:
+        print(f"\n{'=' * 60}")
+        if title:
+            print(f"  {title}")
+            print(f"{'=' * 60}")
+        print(text)
+        print(f"{'=' * 60}\n")
+
+
+def rule(title: str = "", style: str = "blue") -> None:
+    """Print a Rich rule line."""
+    console = _get_console()
+    if HAS_RICH:
+        console.rule(title=title, style=style)
+    else:
+        print(f"\n{'=' * 60}")
+        if title:
+            print(f"  {title}")
+
+
+def ask(prompt: str, default: str = "") -> str:
+    """Ask user for input with optional default."""
+    if HAS_RICH:
+        return Prompt.ask(prompt, default=default)
+    if default:
+        val = input(f"{prompt} [{default}]: ")
+        return val if val else default
+    return input(prompt + " ")
+
+
+def status(text: str, style: str = "blue") -> None:
+    """Print a status message with color."""
+    console = _get_console()
+    if HAS_RICH:
+        console.print(f"[{style}]{text}[/{style}]")
+    else:
+        print(text)
+
+
+def status_ok(text: str) -> None:
+    status(f"\u2713 {text}", "green")
+
+
+def status_fail(text: str) -> None:
+    status(f"\u2717 {text}", "red")
+
+
+def status_warn(text: str) -> None:
+    status(f"\u26a0 {text}", "yellow")
+
+
+def status_info(text: str) -> None:
+    status(text, "blue")
 
 # ============================================================================
 # AUTOMATIC CLEANUP ON CRASH / WINDOW CLOSE
@@ -406,7 +497,7 @@ def _get_package_version(package: str) -> Optional[str]:
     """Get installed version of a package via pip show, or None if not installed."""
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "pip", "show", package],
+            [_get_comfyui_python(), "-m", "pip", "show", package],
             capture_output=True, text=True, timeout=10,
         )
         if result.returncode == 0:
@@ -451,6 +542,7 @@ def restore_mode(logger: logging.Logger) -> None:
         def get_text(lang, key, **kwargs):
             return key
 
+    python = _get_comfyui_python()
     t = lambda key, **kwargs: get_text("en", key, **kwargs)
 
     backup_path = Path(BACKUP_FILE)
@@ -471,7 +563,7 @@ def restore_mode(logger: logging.Logger) -> None:
         for pkg in TRACKED_PACKAGES:
             print(f"   Uninstalling {pkg}...")
             subprocess.run(
-                [sys.executable, "-m", "pip", "uninstall", "-y", pkg],
+                [python, "-m", "pip", "uninstall", "-y", pkg],
                 capture_output=True, timeout=30,
             )
         print(f"   Done. Checked: {', '.join(TRACKED_PACKAGES)}")
@@ -490,10 +582,10 @@ def restore_mode(logger: logging.Logger) -> None:
             print(f"   Restoring {pkg} to {saved_version}...")
             try:
                 subprocess.run(
-                    [sys.executable, "-m", "pip", "uninstall", "-y", pkg],
+                    [python, "-m", "pip", "uninstall", "-y", pkg],
                     capture_output=True, timeout=30,
                 )
-                cmd = [sys.executable, "-m", "pip", "install", f"{pkg}=={saved_version}"]
+                cmd = [python, "-m", "pip", "install", f"{pkg}=={saved_version}"]
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
                 if result.returncode == 0:
                     print(f"   {pkg} restored")
@@ -507,7 +599,7 @@ def restore_mode(logger: logging.Logger) -> None:
                 print(f"   Removing {pkg} {pkg_ver} (was not installed before)...")
                 try:
                     subprocess.run(
-                        [sys.executable, "-m", "pip", "uninstall", "-y", pkg],
+                        [python, "-m", "pip", "uninstall", "-y", pkg],
                         capture_output=True, timeout=30,
                     )
                     print(f"   {pkg} removed")
@@ -533,10 +625,10 @@ def setup_logging() -> Tuple[logging.Logger, str]:
     logger.setLevel(logging.DEBUG)
     logger.handlers.clear()
 
-    console = logging.StreamHandler(sys.stdout)
-    console.setLevel(logging.INFO)
-    console.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
-    logger.addHandler(console)
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+    logger.addHandler(console_handler)
 
     try:
         file_handler = logging.FileHandler(log_filename, encoding="utf-8", mode="w")
@@ -565,7 +657,7 @@ def parse_version_safe(ver_str: str) -> Tuple[int, int, int]:
     """
     if HAS_PACKAGING:
         try:
-            parsed = pkg_version.parse(ver_str)
+            parsed = pkg_version.parse(ver_str)  # noqa: F821
             if hasattr(parsed, "release") and parsed.release:
                 release = parsed.release
                 if len(release) >= 3:
@@ -617,13 +709,19 @@ class TRSAInstaller:
         self.temp_files: List[Path] = []
         self.installation_results: List[Dict[str, str]] = []
         self.last_backup_path = ""
+        self.auto_mode = False
+        self.yes_mode = False
+        self.dry_run = False
+        self._success = False
 
         self.logger.info(f"TRSA Installer v{VERSION} initialized")
         self.logger.debug(f"Log: {self.log_path}")
         self.logger.debug(f"Python: {sys.version}")
-        self.logger.debug(
-            f"Packaging library: {'Available' if HAS_PACKAGING else 'NOT AVAILABLE'}"
-        )
+        has_packaging = HAS_PACKAGING if 'HAS_PACKAGING' in dir() else False
+        if not has_packaging:
+            self.logger.debug("Packaging library: NOT AVAILABLE")
+        else:
+            self.logger.debug("Packaging library: Available")
 
     def t(self, key: str, **kwargs: str) -> str:
         return get_text(self.lang, key, **kwargs)
@@ -633,34 +731,47 @@ class TRSAInstaller:
     # ========================================================================
 
     def show_welcome_screen(self) -> None:
-        sep = "=" * 70
+        console = _get_console()
         title = self.t("welcome_title")
         ver = self.t("welcome_version", version=VERSION)
 
-        print(f"\n{sep}")
-        print(" " * ((70 - len(title)) // 2) + title)
-        print(" " * ((70 - len(ver)) // 2) + ver)
-        print(f"{sep}\n")
+        content = f"  {title}\n  {ver}\n  One-click GPU acceleration"
+        if HAS_RICH:
+            console.print(Panel(content, title="TRSA ComfyUI Installer", border_style="cyan"))
+        else:
+            sep = "=" * 60
+            print(f"\n{sep}")
+            print(f"  {title}")
+            print(f"  {ver}")
+            print("  One-click GPU acceleration")
+            print(f"{sep}\n")
 
         self.select_language()
 
     def select_language(self) -> None:
-        print(self.t("lang_select_prompt"))
-        print(f"  {self.t('lang_option_en')}\n  {self.t('lang_option_ru')}")
-        print(f"  {self.t('lang_default')}\n")
+        if not self.auto_mode:
+            panel(
+                f"{self.t('lang_option_en')}\n"
+                f"{self.t('lang_option_ru')}\n"
+                f"{self.t('lang_default')}",
+                title=self.t("lang_select_prompt"),
+            )
 
-        choice = input(self.t("lang_choice_prompt")).strip()
-
-        if choice == "1":
-            self.lang = "en"
-        elif choice == "2":
-            self.lang = "ru"
-        else:
+        if self.auto_mode:
             self.lang = get_system_language()
-            if choice and choice not in ["1", "2", ""]:
-                print(self.t("lang_invalid"))
+        else:
+            choice = ask(self.t("lang_choice_prompt"), default="")
 
-        print(self.t("lang_selected"))
+            if choice == "1":
+                self.lang = "en"
+            elif choice == "2":
+                self.lang = "ru"
+            else:
+                self.lang = get_system_language()
+                if choice and choice not in ["1", "2", ""]:
+                    status_warn(self.t("lang_invalid"))
+
+        status_info(self.t("lang_selected"))
         self.logger.info(f"Language: {self.lang}")
 
     # ========================================================================
@@ -668,7 +779,7 @@ class TRSAInstaller:
     # ========================================================================
 
     def check_system(self) -> SystemInfo:
-        print(f"{self.t('check_title')}\n{'=' * 70}")
+        rule("System Compatibility Check", "blue")
         self.logger.info("System check started")
 
         # GPU detection (before system checks)
@@ -678,10 +789,9 @@ class TRSAInstaller:
         # Python version
         py_tuple = sys.version_info[:3]
         py_ver = f"{py_tuple[0]}.{py_tuple[1]}.{py_tuple[2]}"
-        print(f"Python version: {py_ver}")
 
         if py_tuple < MIN_PYTHON_VERSION:
-            print(self.t("error_python_version", version=py_ver))
+            status_fail(self.t("error_python_version", version=py_ver))
             self.logger.error(f"Python {py_ver} too old")
             input(self.t("press_enter"))
             sys.exit(1)
@@ -692,21 +802,13 @@ class TRSAInstaller:
         # PyTorch & CUDA
         torch_ver, cuda_ver = self._get_torch_info()
         if not torch_ver:
-            print(self.t("error_torch_not_installed"))
+            status_fail(self.t("error_torch_not_installed"))
             self.logger.error("PyTorch not found")
             input(self.t("press_enter"))
             sys.exit(1)
 
-        print(f"PyTorch version: {torch_ver}")
-        if cuda_ver:
-            print(f"CUDA version: {cuda_ver}")
-
         # SageAttention
         sage_ver = self._get_sage_version()
-        if sage_ver:
-            print(self.t("check_sage_installed", version=sage_ver))
-        else:
-            print(self.t("check_sage_not_installed"))
 
         # Compatibility
         compatible, upgrade = self._check_compatibility(torch_ver, cuda_ver)
@@ -728,20 +830,30 @@ class TRSAInstaller:
         )
         self.system_info = info
 
-        print()
-        if compatible and not upgrade:
-            print(self.t("check_compatible"))
-        elif upgrade:
-            print(self.t("check_upgrade_needed"))
-            print(
-                self.t(
-                    "check_current_config",
-                    torch=torch_ver,
-                    cuda=cuda_ver or "N/A",
-                )
-            )
+        # Build Rich card
+        sage_display = sage_ver if sage_ver else "Not installed"
+        status_text = (
+            "Fully compatible" if compatible and not upgrade
+            else "Upgrade recommended" if upgrade
+            else "Needs attention"
+        )
 
-        print("=" * 70)
+        lines = [
+            f"GPU:        {info.gpu_name or 'Not detected'}"
+            + (f" ({info.vram_mb / 1024:.1f} GB)" if info.vram_mb else ""),
+            f"Python:     {py_ver}",
+            f"PyTorch:    {torch_ver}",
+            f"CUDA:       {cuda_ver or 'N/A'}",
+            f"Sage:       {sage_display}",
+            "",
+            f"Status:     {status_text}",
+        ]
+        text = "\n".join(lines)
+
+        style = "green" if (compatible and not upgrade) else "yellow"
+        panel(text, title="System Compatibility", border_style=style)
+
+        self.logger.info("System check complete")
         return info
 
     def _get_torch_info(self) -> Tuple[Optional[str], Optional[str]]:
@@ -787,7 +899,7 @@ class TRSAInstaller:
         """Get SageAttention base version."""
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "pip", "show", "sageattention"],
+                [self._get_comfyui_python(), "-m", "pip", "show", "sageattention"],
                 capture_output=True,
                 text=True,
                 timeout=15,
@@ -899,35 +1011,29 @@ class TRSAInstaller:
 
     def _print_gpu_detection(self, gpu: Dict[str, Any]) -> None:
         """Print GPU detection results in user-friendly format."""
-        print(self.t("gpu_section_title"))
+        console = _get_console()
+        lines = []
+
         if gpu["gpu_name"]:
-            print(self.t("gpu_detecting"))
             vram_gb = gpu["vram_mb"] / 1024 if gpu["vram_mb"] else 0
-            print(
-                self.t(
-                    "gpu_found",
-                    name=gpu["gpu_name"],
-                    vram_gb=vram_gb,
-                )
-            )
+            lines.append(f"GPU: {gpu['gpu_name']} ({vram_gb:.1f} GB)")
             if gpu["compute_cap"]:
-                print(
-                    self.t(
-                        "gpu_compute_cap",
-                        major=gpu["compute_cap"][0],
-                        minor=gpu["compute_cap"][1],
-                    )
+                lines.append(
+                    f"Compute capability: {gpu['compute_cap'][0]}.{gpu['compute_cap'][1]}"
                 )
             if gpu["min_cuda"]:
-                print(
-                    self.t(
-                        "gpu_recommended_cuda",
-                        cuda=gpu["min_cuda"],
-                    )
-                )
+                lines.append(f"Recommended: CUDA {gpu['min_cuda']}")
         else:
-            print(self.t("gpu_not_found"))
-            print(self.t("gpu_cpu_fallback"))
+            lines.append("No NVIDIA GPU detected — running in CPU mode")
+            lines.append("")
+            lines.append("ComfyUI will run on CPU. Slower but fully functional.")
+
+        text = "\n".join(lines)
+        if HAS_RICH:
+            console.print(Panel(text, title="GPU Detection", border_style="magenta"))
+        else:
+            print(f"\n[ GPU Detection ]")
+            print(text)
         print()
 
     # ========================================================================
@@ -961,9 +1067,12 @@ class TRSAInstaller:
 
     def uninstall_package(self, package: str) -> bool:
         """Uninstall package if exists."""
+        if self.dry_run:
+            status_info(f"[DRY RUN] Would uninstall {package}")
+            return True
         try:
             check = subprocess.run(
-                [sys.executable, "-m", "pip", "show", package],
+                [self._get_comfyui_python(), "-m", "pip", "show", package],
                 capture_output=True,
                 timeout=10,
             )
@@ -971,7 +1080,7 @@ class TRSAInstaller:
                 print(self.t("cleanup_removing_package", package=package))
                 self.logger.info(f"Uninstalling {package}")
                 result = subprocess.run(
-                    [sys.executable, "-m", "pip", "uninstall", "-y", package],
+                    [self._get_comfyui_python(), "-m", "pip", "uninstall", "-y", package],
                     capture_output=True,
                     timeout=30,
                 )
@@ -987,8 +1096,10 @@ class TRSAInstaller:
     def prompt_torch_upgrade(self) -> bool:
         if not self.system_info or not self.system_info.upgrade_needed:
             return False
+        if self.auto_mode:
+            return True
 
-        print(f"{self.t('torch_upgrade_title')}\n{'=' * 70}")
+        rule("PyTorch Upgrade Available", "blue")
 
         latest = self._get_latest_config()
         if latest:
@@ -1000,31 +1111,18 @@ class TRSAInstaller:
             )
 
             boost = latest.get("boost", "Better performance")
-            print(
-                self.t(
-                    "torch_upgrade_msg",
-                    current=current_torch,
-                    cuda=current_cuda,
-                )
-            )
-            print(
-                self.t(
-                    "torch_upgrade_recommend",
-                    target=latest["torch_version"],
-                    cuda_target=latest["cuda_version"],
-                )
-            )
-            print(f"   Performance: {boost}\n")
 
-        choice = input(self.t("torch_upgrade_prompt")).strip().lower()
-        approved = choice in ["y", "yes", "д", "да", ""]
+            if HAS_RICH:
+                _get_console().print(f"Current: [yellow]{current_torch}[/yellow] + CUDA {current_cuda}")
+                _get_console().print(f"Recommended: [cyan]{latest['torch_version']}[/cyan] + CUDA {latest['cuda_version']}")
+                _get_console().print(f"Performance: {boost}\n")
+            else:
+                print(f"Current: {current_torch} + CUDA {current_cuda}")
+                print(f"Recommended: {latest['torch_version']} + CUDA {latest['cuda_version']}")
+                print(f"Performance: {boost}\n")
 
-        if approved:
-            print(self.t("torch_upgrade_yes"))
-        else:
-            print(self.t("torch_upgrade_skip"))
-
-        return approved
+        choice = ask(self.t("torch_upgrade_prompt"), default="y")
+        return choice.strip().lower() in ["y", "yes", "д", "да", ""]
 
     def _get_latest_config(self) -> Optional[Dict[str, str]]:
         if not self.system_info:
@@ -1045,6 +1143,10 @@ class TRSAInstaller:
             self.errors.append("Insufficient disk space for PyTorch upgrade")
             return False
 
+        if self.dry_run:
+            status_info(f"[DRY RUN] Would upgrade PyTorch to {config['torch_version']}")
+            return True
+
         print(self.t("install_torch_upgrading", version=config["torch_version"]))
         self.logger.info(
             f"Upgrading PyTorch to {config['torch_version']} (requires ~2.5GB download)"
@@ -1052,7 +1154,7 @@ class TRSAInstaller:
 
         try:
             cmd = [
-                sys.executable,
+                self._get_comfyui_python(),
                 "-m",
                 "pip",
                 "install",
@@ -1092,25 +1194,38 @@ class TRSAInstaller:
     def install_triton(self) -> bool:
         """Install Triton (optional)."""
         if self.system_info is None:
-            print(self.t("error_system_info_not_set"))
+            status_fail(self.t("error_system_info_not_set"))
             self.logger.error("System info not set. Run system check first.")
+            return False
+        py_major, py_minor, _ = self.system_info.python_tuple
+
+        rule(self.t("triton_title"), "blue")
+
+        if self.auto_mode:
+            pass
+        else:
+            choice = ask(self.t("triton_prompt"), default="y")
+            if choice.strip().lower() not in ["y", "yes", "д", "да", ""]:
+                print(self.t("triton_skipped"))
+                return False
+
+        return self._do_install_triton()
+
+    def _do_install_triton(self) -> bool:
+        """Internal: actually perform the Triton install (called after prompts)."""
+        if self.system_info is None:
             return False
         py_major, py_minor, _ = self.system_info.python_tuple
         py_key = f"py{py_major}{py_minor}"
 
-        print(f"{self.t('triton_title')}\n{'=' * 70}")
-        choice = input(self.t("triton_prompt")).strip().lower()
-
-        if choice not in ["y", "yes", "д", "да", ""]:
-            print(self.t("triton_skipped"))
-            return False
-
-        # Отдельная логика для Python 3.13: ставим через pip triton-windows
         if py_key == "py313":
             self.logger.info("Installing Triton for Python 3.13 via pip (triton-windows)")
+            if self.dry_run:
+                status_info("[DRY RUN] Would install triton-windows<3.6 via pip")
+                return False
             try:
                 cmd = [
-                    sys.executable,
+                    self._get_comfyui_python(),
                     "-m",
                     "pip",
                     "install",
@@ -1124,22 +1239,21 @@ class TRSAInstaller:
                     timeout=600,
                 )
                 if result.returncode == 0:
-                    print(self.t("triton_success"))
+                    status_ok(self.t("triton_success"))
                     self.logger.info("Triton installed via pip (triton-windows)")
                     return True
                 else:
-                    print(self.t("triton_failed"))
+                    status_fail(self.t("triton_failed"))
                     self.logger.error(f"Triton pip install failed: {result.stderr[:200]}")
                     return False
             except Exception as e:
-                print(self.t("triton_failed"))
+                status_fail(self.t("triton_failed"))
                 self.logger.error(f"Triton error (pip): {e}")
                 return False
 
-        # Для остальных версий Python — старая схема через wheel с GitHub
         if py_key not in TRITON_VERSIONS:
             self.logger.debug(f"No Triton mapping for {py_key}")
-            print(self.t("triton_skipped"))
+            status_info(self.t("triton_skipped"))
             return False
 
         try:
@@ -1149,26 +1263,30 @@ class TRSAInstaller:
             print(self.t("install_downloading", file=filename))
             self.logger.info(f"Downloading Triton: {url}")
 
+            if self.dry_run:
+                status_info(f"[DRY RUN] Would download {filename}")
+                return False
+
             urllib.request.urlretrieve(url, filename)
             self.temp_files.append(Path(filename))
 
             print(self.t("triton_installing"))
             result = subprocess.run(
-                [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", filename],
+                [self._get_comfyui_python(), "-m", "pip", "install", "--upgrade", "--force-reinstall", filename],
                 capture_output=True,
                 timeout=120,
             )
 
             if result.returncode == 0:
-                print(self.t("triton_success"))
+                status_ok(self.t("triton_success"))
                 self.logger.info("Triton installed from wheel")
                 return True
 
-            print(self.t("triton_failed"))
+            status_fail(self.t("triton_failed"))
             self.logger.error(f"Triton failed: {result.stderr[:200]}")
             return False
         except Exception as e:
-            print(self.t("triton_failed"))
+            status_fail(self.t("triton_failed"))
             import traceback
             self.logger.error(f"Triton error: {e}\n{traceback.format_exc()}")
             return False
@@ -1276,9 +1394,13 @@ class TRSAInstaller:
         print(self.t("install_installing"))
         self.logger.info(f"Installing: {wheel_path}")
 
+        if self.dry_run:
+            status_info(f"[DRY RUN] Would install SageAttention from {wheel_path}")
+            return True
+
         try:
             cmd = [
-                sys.executable,
+                self._get_comfyui_python(),
                 "-m",
                 "pip",
                 "install",
@@ -1320,17 +1442,12 @@ class TRSAInstaller:
         manifest = WheelManifest(self.logger)
         loaded = manifest.fetch()
         if not loaded:
-            print("[ WARNING ]")
-            print("   Could not load any wheel manifest.")
-            print("   Using local fallback — some packages may not be available.")
-            print()
+            status_warn("Could not load any wheel manifest. Using local fallback.")
 
         if manifest.source == "remote":
-            print("[ Package Resolution ]")
-            print("   Checking latest wheels from wildminder/AI-windows-whl...")
+            status_info("Checking latest wheels from wildminder/AI-windows-whl...")
         else:
-            print("[ Package Resolution ]")
-            print("   Remote unavailable. Using local fallback manifest...")
+            status_info("Remote unavailable. Using local fallback manifest...")
         print()
 
         py_minor = self.system_info.python_tuple[1]
@@ -1338,23 +1455,52 @@ class TRSAInstaller:
         torch_ver = self.system_info.torch_version
 
         results = []
-        for pkg_name, pkg_desc, is_critical in PACKAGES_TO_INSTALL:
-            print(f"   Resolving {pkg_desc}...")
-            wheel = manifest.resolve(py_minor, cuda_ver, torch_ver, pkg_name)
-            if not wheel:
-                if is_critical:
-                    print(f"   [CRITICAL] {pkg_name}: Not available!")
-                else:
-                    print(f"   {pkg_name} — no wheel available for your configuration.")
-                    print("   This is safe to skip. ComfyUI will work normally.")
-                print()
-                results.append({"name": pkg_name, "status": "skipped", "error": "no matching wheel"})
-                continue
 
-            print(f"   {pkg_name} — found (CUDA {wheel.get('cuda_tag', 'any')})")
-            installed = self._install_wheel(wheel, pkg_name)
-            results.append(installed)
-            print()
+        if HAS_RICH and not self.dry_run:
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            ) as progress:
+                for pkg_name, pkg_desc, is_critical in PACKAGES_TO_INSTALL:
+                    task_desc = f"Resolving {pkg_name}"
+                    task = progress.add_task(task_desc, total=100)
+                    progress.update(task, advance=20)
+
+                    wheel = manifest.resolve(py_minor, cuda_ver, torch_ver, pkg_name)
+                    progress.update(task, advance=30)
+
+                    if not wheel:
+                        progress.update(task, completed=100)
+                        if is_critical:
+                            status_fail(f"{pkg_name}: Not available!")
+                        else:
+                            status_info(f"{pkg_name} — not available for this config (safe to skip)")
+                        results.append({"name": pkg_name, "status": "skipped", "error": "no matching wheel"})
+                        continue
+
+                    status_ok(f"{pkg_name} found (CUDA {wheel.get('cuda_tag', 'any')})")
+                    progress.update(task, advance=30)
+
+                    installed = self._install_wheel(wheel, pkg_name)
+                    progress.update(task, completed=100)
+                    results.append(installed)
+        else:
+            # Dumb terminal fallback or dry-run
+            for pkg_name, pkg_desc, is_critical in PACKAGES_TO_INSTALL:
+                print(f"   Resolving {pkg_desc}...")
+                wheel = manifest.resolve(py_minor, cuda_ver, torch_ver, pkg_name)
+                if not wheel:
+                    if is_critical:
+                        status_fail(f"{pkg_name}: Not available!")
+                    else:
+                        status_info(f"{pkg_name} — not available for this config")
+                    results.append({"name": pkg_name, "status": "skipped", "error": "no matching wheel"})
+                    continue
+                status_ok(f"{pkg_name} found")
+                installed = self._install_wheel(wheel, pkg_name)
+                results.append(installed)
 
         return results
 
@@ -1400,7 +1546,7 @@ class TRSAInstaller:
         print(f"   Installing {pkg_name}... ", end="", flush=True)
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", filepath],
+                [self._get_comfyui_python(), "-m", "pip", "install", "--upgrade", "--force-reinstall", filepath],
                 capture_output=True, text=True, timeout=180,
             )
             if result.returncode == 0:
@@ -1426,6 +1572,8 @@ class TRSAInstaller:
     def prompt_rollback(self) -> bool:
         if not self.system_info or not self.system_info.sage_version:
             return False
+        if self.auto_mode:
+            return False
 
         print(f"{self.t('rollback_title')}\n{'=' * 70}")
         choice = input(self.t("rollback_prompt")).strip().lower()
@@ -1439,9 +1587,13 @@ class TRSAInstaller:
         print(self.t("rollback_starting"))
         self.logger.info(f"Rollback to {prev_ver}")
 
+        if self.dry_run:
+            status_info(f"[DRY RUN] Would rollback SageAttention to {prev_ver}")
+            return True
+
         try:
             cmd = [
-                sys.executable,
+                self._get_comfyui_python(),
                 "-m",
                 "pip",
                 "install",
@@ -1475,74 +1627,65 @@ class TRSAInstaller:
     def cleanup(self) -> None:
         """Clean up temp files and register them as cleared."""
         _cleanup_temp_files(self.temp_files, self.logger)
-        print(f"{self.t('summary_title')}\n{'=' * 70}")
+        self.show_summary(getattr(self, "_success", False))
+
+    def show_summary(self, success: bool) -> None:
+        self._success = success
+        rule(self.t("summary_title"), "green" if success else "red")
 
         if success:
-            print(self.t("summary_success"))
+            status_ok(self.t("summary_success"))
         else:
-            print(self.t("summary_failed"))
+            status_fail(self.t("summary_failed"))
 
         print()
 
         if self.system_info:
-            # GPU info
             if self.system_info.gpu_name:
-                print(f"   GPU: {self.system_info.gpu_name}")
-                if self.system_info.vram_mb:
-                    print(f"   VRAM: {self.system_info.vram_mb / 1024:.1f} GB")
+                vram = f" ({self.system_info.vram_mb / 1024:.1f} GB)" if self.system_info.vram_mb else ""
+                status_info(f"GPU: {self.system_info.gpu_name}{vram}")
             else:
-                print("   GPU: Not detected (CPU mode)")
-            print()
+                status_info("GPU: Not detected (CPU mode)")
 
             if self.system_info.sage_version:
-                print(
-                    self.t("summary_previous_version", version=self.system_info.sage_version)
-                )
+                status_info(f"Previous Sage version: {self.system_info.sage_version}")
 
             new_ver = self._get_sage_version()
             if new_ver:
-                print(self.t("summary_installed_version", version=new_ver))
+                status_ok(f"Installed Sage version: {new_ver}")
 
-            print()
-            print(
-                self.t("summary_python_version", version=self.system_info.python_version)
-            )
-            print(
-                self.t("summary_torch_version", version=self.system_info.torch_version or "N/A")
-            )
-            print(
-                self.t("summary_cuda_version", version=self.system_info.cuda_version or "N/A")
-            )
+            status_info(f"Python: {self.system_info.python_version}")
+            status_info(f"PyTorch: {self.system_info.torch_version or 'N/A'}")
+            status_info(f"CUDA: {self.system_info.cuda_version or 'N/A'}")
 
-        # Package installation results
         if self.installation_results:
             print()
-            print("[ Package Results ]")
+            rule("Package Results", "blue")
             for r in self.installation_results:
                 if r["status"] == "installed":
-                    print(f"   {r['name']} {r.get('version', '')}")
+                    status_ok(f"{r['name']} {r.get('version', '')}")
                 elif r["status"] == "skipped":
-                    print(f"   {r['name']} — skipped (not available for your config)")
+                    status_warn(f"{r['name']} — skipped (not available for your config)")
                 else:
-                    print(f"   {r['name']} — failed: {r.get('error', 'unknown')}")
+                    status_fail(f"{r['name']} — failed: {r.get('error', 'unknown')}")
             print()
 
         if self.errors:
             print(f"\nErrors encountered: {len(self.errors)}")
             for i, err in enumerate(self.errors, 1):
-                print(f"  {i}. {err[:100]}")
+                status_fail(f"  {i}. {err[:100]}")
 
-        print(self.t("summary_log_saved", path=self.log_path))
+        status_info(self.t("summary_log_saved", path=self.log_path))
 
         if success:
-            print(self.t("summary_next_steps"))
+            print(f"\n{self.t('summary_next_steps')}")
             print(self.t("summary_next_step_1"))
             print(self.t("summary_next_step_2"))
             print(self.t("summary_next_step_3"))
             if getattr(self, "last_backup_path", ""):
-                print("  To restore your previous state, run: TRSA_installer.bat --restore")
+                print("  To restore your previous state, run: TRSA_installer.exe --restore")
 
-        print("=" * 70)
+        rule("", style="blue")
 
     # ========================================================================
     # MAIN WORKFLOW
@@ -1645,9 +1788,45 @@ class TRSAInstaller:
 # ============================================================================
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="TRSA ComfyUI Installer",
+    )
+    parser.add_argument(
+        "--auto", action="store_true",
+        help="Run with all defaults, no prompts",
+    )
+    parser.add_argument(
+        "--yes", action="store_true",
+        help="Auto-approve all yes/no prompts",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="Show what would happen without making changes",
+    )
+    parser.add_argument(
+        "--version", action="store_true",
+        help="Print version and exit",
+    )
+    parser.add_argument(
+        "--restore", action="store_true",
+        help="Restore previous system state",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
-    if "--restore" in sys.argv:
+    args = _parse_args()
+
+    if args.version:
+        print(f"TRSA ComfyUI Installer v{VERSION}")
+        sys.exit(0)
+
+    if args.restore:
         logger, log_path = setup_logging()
+        console = _get_console()
+        if HAS_RICH:
+            console.print(f"[blue]Restore log:[/blue] {log_path}")
         print(f"Restore log: {log_path}")
         print()
         restore_mode(logger)
@@ -1655,11 +1834,18 @@ def main() -> None:
 
     try:
         installer = TRSAInstaller()
+        installer.auto_mode = args.auto or args.yes
+        installer.yes_mode = args.yes
+        installer.dry_run = args.dry_run
         result = installer.run()
         input(installer.t("press_enter"))
         sys.exit(0 if result.success else 1)
     except Exception as e:
-        print(f"\nCRITICAL ERROR: {e}")
+        console = _get_console()
+        if HAS_RICH:
+            console.print(f"\n[red]CRITICAL ERROR: {e}[/red]")
+        else:
+            print(f"\nCRITICAL ERROR: {e}")
         input("\nPress Enter to exit...")
         sys.exit(1)
 
