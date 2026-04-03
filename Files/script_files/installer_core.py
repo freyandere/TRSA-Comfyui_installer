@@ -305,17 +305,16 @@ class WheelManifest:
             key=lambda w: parse_version_safe(w.get("torch_min", "0.0.0")),
             reverse=True,
         )
-        result = candidates[0]
-        # Resolve URL
-        url_pattern = result.get("url_pattern", "")
-        filename = urllib.parse.quote(result["filename"], safe="")
+        best = candidates[0].copy()
+        url_pattern = best.get("url_pattern", "")
+        filename = urllib.parse.quote(best["filename"], safe="")
         if url_pattern.startswith("local://"):
-            result["url"] = url_pattern
-            result["is_local"] = True
+            best["url"] = url_pattern
+            best["is_local"] = True
         else:
-            result["url"] = url_pattern.format(filename=filename)
-            result["is_local"] = False
-        return result
+            best["url"] = url_pattern.format(filename=filename)
+            best["is_local"] = False
+        return best
 
 
 # ============================================================================
@@ -1332,7 +1331,7 @@ class TRSAInstaller:
             self.logger.info(f"Downloading {filename} from {url}")
             print(f"   Downloading {filename[:50]}... ", end="", flush=True)
             try:
-                clean_name = filename.split("?")[0]
+                clean_name = Path(filename.split("?")[0]).name
                 local = Path(clean_name)
                 urllib.request.urlretrieve(url, local)
                 if local.exists() and local.stat().st_size > 0:
@@ -1363,7 +1362,6 @@ class TRSAInstaller:
             else:
                 self.logger.error(f"{pkg_name} install failed: {result.stderr[:200]}")
                 print("failed")
-                self.uninstall_package(pkg_name)
                 return {"name": pkg_name, "status": "failed", "error": result.stderr[:200]}
         except subprocess.TimeoutExpired:
             print("timed out")
